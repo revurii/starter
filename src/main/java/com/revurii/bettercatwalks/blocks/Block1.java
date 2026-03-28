@@ -37,6 +37,7 @@ public class Block1 extends Block {
         this.meta = meta;
         this.least_quantity = least_quantity;
         this.most_quantity = most_quantity;
+
     }
 
     @Override

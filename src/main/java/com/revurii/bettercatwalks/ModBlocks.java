@@ -1,28 +1,103 @@
 package com.revurii.bettercatwalks;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
 
-import com.revurii.bettercatwalks.blocks.Block1;
 import com.revurii.bettercatwalks.blocks.BlockCatwalk;
-import com.revurii.bettercatwalks.blocks.MetaBlock;
-import com.revurii.bettercatwalks.items.ItemBlockMetaBlock;
 
 import cpw.mods.fml.common.registry.GameRegistry;
 
-public class ModBlocks {
+// Credit to Et Futurum (Requiem)
+public enum ModBlocks {
 
-    public static Block block1;
-    public static Block metablock;
-    public static Block catwalk;
+    // spotless:off
+    // make sure to leave a trailing comma
+    CATWALK(true, new BlockCatwalk("catwalk"), BlockCatwalk.ItemCatwalk.class, "catwalk"),
+    ; // leave trailing semicolon
+    // spotless:on
+
+    public static final ModBlocks[] VALUES = values();
 
     public static void init() {
-        GameRegistry.registerBlock(block1 = new Block1("block1", Material.iron, ModItems.item1, 0, 1, 3), "block1");
-        GameRegistry.registerBlock(
-            metablock = new MetaBlock("metablock", Material.iron),
-            ItemBlockMetaBlock.class,
-            "metablock");
-        GameRegistry.registerBlock(catwalk = new BlockCatwalk("catwalk"), "catwalk");
+        for (ModBlocks block : VALUES) {
+            if (block.isEnabled()) {
+                block.theBlock.setCreativeTab(CreativeTabs.tabBlock);
+                if (block.getItemBlock() != null || !block.getHasItemBlock()) {
+                    GameRegistry.registerBlock(block.get(), block.getItemBlock(), block.name);
+                    // This part is used if the getItemBlock() is not ItemBlock.class, so we register a custom ItemBlock
+                    // class as the ItemBlock
+                    // It is also used if the getItemBlock() == null and getHasItemBlock() is false, meaning we WANT to
+                    // register it as null, making the block have no inventory item.
+                } else {
+                    GameRegistry.registerBlock(block.get(), block.name);
+                    // Used if getItemBlock() == null but getHasItemBlock() is true, registering it with a default
+                    // inventory item.
+                }
+            }
+        }
     }
 
+    private final boolean isEnabled;
+    private final Block theBlock;
+    /**
+     * null == default ItemBlock
+     */
+    private final Class<? extends ItemBlock> itemBlock;
+    /**
+     * Determines if we should register the block with an ItemBlock.
+     * Set to false when the constructor that specifies the ItemBlock is specifically set to false.
+     */
+    private boolean hasItemBlock;
+    private final String name;
+
+    ModBlocks(Boolean enabled, Block block, String name) {
+        this(enabled, block, null, name);
+        hasItemBlock = true;
+    }
+
+    ModBlocks(Boolean enabled, Block block, Class<? extends ItemBlock> iblock, String name) {
+        isEnabled = enabled;
+        theBlock = block;
+        itemBlock = iblock;
+        hasItemBlock = iblock != null;
+        this.name = name;
+    }
+
+    /**
+     * If this is false, the block is initialized without an inventory item, or ItemBlock.
+     */
+    public boolean getHasItemBlock() {
+        return hasItemBlock;
+    }
+
+    public Block get() {
+        return theBlock;
+    }
+
+    public Class<? extends ItemBlock> getItemBlock() {
+        return itemBlock;
+    }
+
+    public Item getItem() {
+        return Item.getItemFromBlock(get());
+    }
+
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    public ItemStack newItemStack() {
+        return newItemStack(1);
+    }
+
+    public ItemStack newItemStack(int count) {
+        return newItemStack(count, 0);
+    }
+
+    public ItemStack newItemStack(int count, int meta) {
+        return new ItemStack(this.get(), count, meta);
+    }
 }

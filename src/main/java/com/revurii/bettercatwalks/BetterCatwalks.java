@@ -20,7 +20,8 @@ public class BetterCatwalks {
     public static final String MODID = "bettercatwalks";
     public static final Logger LOG = LogManager.getLogger(MODID);
 
-    // public static int isbrhTileEntityRenderID;
+     @Mod.Instance(MODID)
+    public static BetterCatwalks betterCatwalksInstance;
 
     @SidedProxy(
         clientSide = "com.revurii.bettercatwalks.ClientProxy",
@@ -32,8 +33,6 @@ public class BetterCatwalks {
     // GameRegistry." (Remove if not needed)
     public void preInit(FMLPreInitializationEvent event) {
         proxy.preInit(event);
-        // isbrhTileEntityRenderID = RenderingRegistry.getNextAvailableRenderId();
-        // RenderingRegistry.registerBlockHandler(new ISBRHTileEntityRenderer());
     }
 
     @Mod.EventHandler
