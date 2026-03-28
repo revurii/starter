@@ -20,7 +20,7 @@ public class BetterCatwalks {
     public static final String MODID = "bettercatwalks";
     public static final Logger LOG = LogManager.getLogger(MODID);
 
-     @Mod.Instance(MODID)
+    @Mod.Instance(MODID)
     public static BetterCatwalks betterCatwalksInstance;
 
     @SidedProxy(
