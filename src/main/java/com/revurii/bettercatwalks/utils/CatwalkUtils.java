@@ -63,8 +63,8 @@ public class CatwalkUtils {
     }
 
     /**
-     * Get the first intercepted AABB between the start and end vector from a list of AABBs positioned at the given
-     * coordinates
+     * Get the first intercepted AABB between the start and end vector from a list of AABBs to be positioned at the
+     * given coordinates
      */
     public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(AxisAlignedBB[] aabbs,
         int x, int y, int z, Vec3 start, Vec3 end) {
@@ -88,6 +88,14 @@ public class CatwalkUtils {
             .min(aabbMopMap.entrySet(), Comparator.comparingDouble(o -> o.getValue().hitVec.distanceTo(start)));
 
         return null;
+    }
+
+    /**
+     * Get the first intercepted AABB between the start and end vector from a list of AABBs
+     */
+    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(AxisAlignedBB[] aabbs,
+        Vec3 start, Vec3 end) {
+        return getFirstInterceptedAABBandMOP(aabbs, 0, 0, 0, start, end);
     }
 
     private static String msg = "";

@@ -17,15 +17,12 @@ import net.minecraftforge.event.world.BlockEvent;
 import org.lwjgl.opengl.GL11;
 
 import com.revurii.bettercatwalks.ModBlocks;
+import com.revurii.bettercatwalks.utils.CatwalkUtils;
+
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class CatwalkEvent {
 
-    public static final int SIDE_BOTTOM = 0;
-    public static final int SIDE_TOP = 1;
-    public static final int SIDE_EAST = 2;
-    public static final int SIDE_WEST = 3;
-    public static final int SIDE_NORTH = 4;
-    public static final int SIDE_SOUTH = 5;
     List<Double> currentBounds = new ArrayList<>();
 
     // @SubscribeEvent
@@ -42,139 +39,78 @@ public class CatwalkEvent {
         }
     }
 
-    // @SubscribeEvent
-    public void onCatwalkLook(DrawBlockHighlightEvent e) {
+    @SubscribeEvent
+    public void onDrawCatwalkHighlight(DrawBlockHighlightEvent e) {
+
         World world = e.player.worldObj;
+        EntityPlayer player = e.player;
         MovingObjectPosition target = e.target;
 
-        EntityPlayer player = e.player;
+        // If the player is sneaking, not holding a catwalk, or not looking at a catwalk, do nothing
+        if (player.isSneaking() || player.getHeldItem() == null
+            || player.getHeldItem()
+                .getItem() != ModBlocks.CATWALK.getItem()
+            || world.getBlock(target.blockX, target.blockY, target.blockZ) != ModBlocks.CATWALK.get()) return;
+
+        Vec3 placeVec = CatwalkUtils
+            .getCatwalkPlacementPosition(player, world, target.blockX, target.blockY, target.blockZ, target.sideHit);
+
+        int px = (int) placeVec.xCoord;
+        int py = (int) placeVec.yCoord;
+        int pz = (int) placeVec.zCoord;
+
+        if (!world.isAirBlock(px, py, pz)) return;
+
+        // I have no idea what this does
         double camX = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) e.partialTicks;
         double camY = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) e.partialTicks;
         double camZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) e.partialTicks;
-        Block block = world.getBlock(target.blockX, target.blockY, target.blockZ);
-        Vec3 lookVec = e.player.getLookVec();
 
-        // System.out.println(lookVec.xCoord + ", " + lookVec.yCoord + ", " + lookVec.zCoord);
-        // System.out.println(target.hitVec.xCoord + ", " + target.hitVec.yCoord + ", " + target.hitVec.zCoord);
+        AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(0, 0, 0, 1, 1, 1);
+        bb.offset(px, py, pz);
+        bb = bb.getOffsetBoundingBox(-camX, -camY, -camZ);
 
-        if (block == ModBlocks.CATWALK.get()) {
-            AxisAlignedBB invisbb = AxisAlignedBB.getBoundingBox(0, 0, 0, 0, 0, 0);
-            AxisAlignedBB bb = block.getSelectedBoundingBoxFromPool(world, target.blockX, target.blockY, target.blockZ);
-            if (bb.minX == 0 && bb.minY == 0 & bb.minZ == 0 && bb.maxX == 0 && bb.maxY == 0 && bb.maxZ == 0) {
-                block.setBlockBounds(0, 0, 0, 0, 0, 0);
-            }
-            // e.setCanceled(true);
-
-            // ModBlocks.CATWALK.get().setBlockBounds(0, 0, 0, 1, 0.1250f, 1);
-            // block.getCollisionBoundingBoxFromPool()
-            // block.setBlockBoundsBasedOnState(world, target.blockX, target.blockY, target.blockZ);
-            // AxisAlignedBB box = block.getCollisionBoundingBoxFromPool(world, target.blockX, target.blockY,
-            // target.blockZ);
-            // AxisAlignedBB box = block.getSelectedBoundingBoxFromPool(world, target.blockX, target.blockY,
-            // target.blockZ);
-            // box = box.expand(1, 1, 1);
-            // box.contract(1, 1, 1);
-            // box = box.getOffsetBoundingBox(-camX, -camY, -camZ);
-            //// box.
-            // RenderGlobal.drawOutlinedBoundingBox(box, -1);
-            // System.out.println(box.minX + "->" + box.maxX);
-            // AxisAlignedBB box2 = new AxisAlignedBB();
-            // System.out.println(box.minX + ", " + box.minY + ", " + box.minZ);
-
-            // drawBoxOutline(box.minX, box.minY+0.1250, box.minZ, box.maxX, box.maxY-0.1250, box.minZ+0.1250);
-            // drawBoxOutline(box.minX, box.minY+0.1250, box.maxZ-0.1250, box.maxX, box.maxY-0.1250, box.maxZ);
-            // drawBoxOutline(box.minX, box.minY, box.minZ, box.maxX, box.minY+0.1250, box.maxZ);
-
-            // double x = box.minX;
-            // double y = box.minY;
-            // double z = box.minZ;
-            //
-            // Tessellator tess = Tessellator.instance;
-            //
-            // tess.startDrawing(GL11.GL_LINE_STRIP);
-            // tess.setColorRGBA(0, 0, 0, 127);
-            // tess.addVertex(x, y, z);
-            // tess.addVertex(x, y+0.8750, z);
-            // tess.addVertex(x+0.1250, y+0.8750, z);
-            // tess.addVertex(x+0.1250, y+0.1250, z);
-            // tess.addVertex(x+0.8750, y+0.1250, z);
-            // tess.addVertex(x+0.8750, y+0.8750, z);
-            // tess.addVertex(x+1.0000, y+0.8750, z);
-            // tess.addVertex(x+1.0000, y, z);
-            // tess.addVertex(x, y, z);
-            // tess.draw();
-
-        } else {
-            ModBlocks.CATWALK.get()
-                .setBlockBounds(0, 0, 0, 1, 1, 1);
-        }
-
-        // RenderGlobal.drawOutlinedBoundingBox();
-
-        // switch (target.sideHit) {
-        // case SIDE_EAST:
-        // System.out.println("You are looking at the EAST side" + target.sideHit);
-        // setOrRetainBounds(block, 0, 0, 1, 1, 0.8750f, 0.8750f);
-        // break;
-        // case SIDE_WEST:
-        // System.out.println("You are looking at the WEST side" + target.sideHit);
-        // setOrRetainBounds(block, 0, 0, 0.1250f, 1, 0.8750f, 0);
-        // break;
-        // case SIDE_NORTH:
-        // System.out.println("You are looking at the NORTH side" + target.sideHit);
-        // setOrRetainBounds(block, 0, 0, 0, 0.1250f, 0.8750f, 1);
-        // break;
-        // case SIDE_SOUTH:
-        // System.out.println("You are looking at the SOUTH side" + target.sideHit);
-        // setOrRetainBounds(block, 0.8750f, 0, 0, 1, 0.8750f, 1);
-        // break;
-        // // case SIDE_TOP:
-        // case SIDE_BOTTOM:
-        // setOrRetainBounds(block, 0, 0, 0, 1, 0.1250f, 1);
-        // break;
-        //
-        // }
-
-    }
-
-    private void drawBoxOutline(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        int alpha = 63;
+        GL11.glPushMatrix();
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
 
         Tessellator tess = Tessellator.instance;
 
         tess.startDrawing(GL11.GL_LINE_STRIP);
-        tess.setColorRGBA(red, green, blue, alpha);
-        tess.addVertex(minX, minY, minZ);
-        tess.addVertex(maxX, minY, minZ);
-        tess.addVertex(maxX, minY, maxZ);
-        tess.addVertex(minX, minY, maxZ);
-        tess.addVertex(minX, minY, minZ);
+        tess.setColorRGBA(0, 0, 0, 63);
+        tess.addVertex(bb.minX, bb.minY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.minY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.minY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.minY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.minY, bb.minZ);
         tess.draw();
 
         tess.startDrawing(GL11.GL_LINE_STRIP);
-        tess.setColorRGBA(red, green, blue, alpha);
-        tess.addVertex(minX, maxY, minZ);
-        tess.addVertex(maxX, maxY, minZ);
-        tess.addVertex(maxX, maxY, maxZ);
-        tess.addVertex(minX, maxY, maxZ);
-        tess.addVertex(minX, maxY, minZ);
+        tess.setColorRGBA(0, 0, 0, 63);
+        tess.addVertex(bb.minX, bb.maxY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.maxY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.maxY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.maxY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.maxY, bb.minZ);
         tess.draw();
 
         tess.startDrawing(GL11.GL_LINES);
-        tess.setColorRGBA(red, green, blue, alpha);
-        tess.addVertex(minX, minY, minZ);
-        tess.addVertex(minX, maxY, minZ);
-        tess.addVertex(maxX, minY, minZ);
-        tess.addVertex(maxX, maxY, minZ);
-        tess.addVertex(maxX, minY, maxZ);
-        tess.addVertex(maxX, maxY, maxZ);
-        tess.addVertex(minX, minY, maxZ);
-        tess.addVertex(minX, maxY, maxZ);
+        tess.setColorRGBA(0, 0, 0, 63);
+        tess.addVertex(bb.minX, bb.minY, bb.minZ);
+        tess.addVertex(bb.minX, bb.maxY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.minY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.maxY, bb.minZ);
+        tess.addVertex(bb.maxX, bb.minY, bb.maxZ);
+        tess.addVertex(bb.maxX, bb.maxY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.minY, bb.maxZ);
+        tess.addVertex(bb.minX, bb.maxY, bb.maxZ);
         tess.draw();
 
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glPopMatrix();
+
     }
+
 }

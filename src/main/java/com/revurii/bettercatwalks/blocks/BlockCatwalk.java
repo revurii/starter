@@ -163,11 +163,7 @@ public class BlockCatwalk extends Block {
         public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
             float hitX, float hitY, float hitZ) {
 
-            // onItemUse() is called a second time by ForgeHooks
-            // On the second call, the player's position and look vector is based on their feet instead of the eyes
-            // Use Minecraft.getMinecraft().thePlayer to be consistent
-            Vec3 placeVec = CatwalkUtils
-                .getCatwalkPlacementPosition(Minecraft.getMinecraft().thePlayer, world, x, y, z, side);
+            Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
 
             // Determine if the catwalk can be placed based on some additional conditions
             if (stack.stackSize == 0) {
