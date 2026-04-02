@@ -1,5 +1,23 @@
 {
-  "variants": {
-    "meta=0": { "model": "bettercatwalks:blocks/catwalk"}
-  }
+  "multipart": [
+    {
+      "apply": {"model": "bettercatwalks:blocks/catwalk_base"}
+    },
+    {
+      "when": {"north": true},
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 0 }
+    },
+    {
+      "when": {"west": true},
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 90 }
+    },
+    {
+      "when": {"south": true},
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 180 }
+    },
+    {
+      "when": {"east": true},
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 270 }
+    }
+  ]
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
@@ -11,6 +12,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
@@ -18,12 +20,13 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class BlockCatwalk extends Block {
+public class BlockCatwalk extends BlockContainer {
 
     private static final float PX = 0.0625f;
 
@@ -130,6 +133,25 @@ public class BlockCatwalk extends Block {
         return ModelISBRH.JSON_ISBRH_ID;
     }
 
+    // Tile Entity-related methods
+
+    @Override
+    public boolean hasTileEntity(int metadata) {
+        return true;
+    }
+
+    @Override
+    public TileEntity createNewTileEntity(World world, int metadata) {
+        return new TileEntityCatwalk();
+    }
+
+    @Override
+    public boolean onBlockActivated(World worldIn, int x, int y, int z, EntityPlayer player, int side, float subX,
+        float subY, float subZ) {
+        System.out.println("onBlockActivated()");
+        return super.onBlockActivated(worldIn, x, y, z, player, side, subX, subY, subZ);
+    }
+
     public static class ItemCatwalk extends ItemBlock {
 
         BlockCatwalk catwalk;
@@ -145,7 +167,7 @@ public class BlockCatwalk extends Block {
         @Override
         @SideOnly(Side.CLIENT)
         public boolean func_150936_a(World world, int x, int y, int z, int side, EntityPlayer player, ItemStack stack) {
-
+            // TODO: Check block replaceability (?) since this currently deletes blocks in the way
             Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
 
             // Check entity collisions for each defined AABB instead of using the superclass method

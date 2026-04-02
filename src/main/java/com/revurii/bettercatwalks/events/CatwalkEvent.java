@@ -69,6 +69,7 @@ public class CatwalkEvent {
         AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(0, 0, 0, 1, 1, 1);
         bb.offset(px, py, pz);
         bb = bb.getOffsetBoundingBox(-camX, -camY, -camZ);
+        bb = bb.contract(0.001, 0.001, 0.001);
 
         GL11.glPushMatrix();
         GL11.glEnable(GL11.GL_BLEND);
