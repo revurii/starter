@@ -145,13 +145,6 @@ public class BlockCatwalk extends BlockContainer {
         return new TileEntityCatwalk();
     }
 
-    @Override
-    public boolean onBlockActivated(World worldIn, int x, int y, int z, EntityPlayer player, int side, float subX,
-        float subY, float subZ) {
-        System.out.println("onBlockActivated()");
-        return super.onBlockActivated(worldIn, x, y, z, player, side, subX, subY, subZ);
-    }
-
     public static class ItemCatwalk extends ItemBlock {
 
         BlockCatwalk catwalk;

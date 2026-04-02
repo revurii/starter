@@ -12,22 +12,16 @@ import com.gtnewhorizon.gtnhlib.blockstate.core.BlockPropertyTrait;
 import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
 
-public class FaceCatwalkProperty implements BlockProperty<Boolean> {
-
-    private final String FACE;
-
-    public FaceCatwalkProperty(String face) {
-        FACE = face;
-    }
+public class HalfCatwalkProperty implements BlockProperty<String> {
 
     @Override
     public String getName() {
-        return FACE;
+        return CatwalkConstants.PROPERTY_HALF;
     }
 
     @Override
     public Type getType() {
-        return Boolean.class;
+        return String.class;
     }
 
     @Override
@@ -39,29 +33,25 @@ public class FaceCatwalkProperty implements BlockProperty<Boolean> {
     }
 
     @Override
-    public Boolean getValue(IBlockAccess world, int x, int y, int z) {
+    public String getValue(IBlockAccess world, int x, int y, int z) {
         TileEntity te = world.getTileEntity(x, y, z);
         if (te instanceof TileEntityCatwalk teCatwalk) {
-            return teCatwalk.getFaceActive(FACE);
+            return teCatwalk.getHalf();
         }
-        return false;
+        return CatwalkConstants.PROPERTY_HALF_BOTTOM;
     }
 
     @Override
-    public void setValue(World world, int x, int y, int z, Boolean flag) {
+    public void setValue(World world, int x, int y, int z, String half) {
         TileEntity te = world.getTileEntity(x, y, z);
         if (te instanceof TileEntityCatwalk teCatwalk) {
-            teCatwalk.updateFace(FACE, flag);
+            teCatwalk.updateHalf(half);
         }
     }
 
     @Override
-    public Boolean getValue(ItemStack stack) {
-        // Always enable north and south face in item form
-        return switch (FACE) {
-            case CatwalkConstants.PROPERTY_SOUTH, CatwalkConstants.PROPERTY_NORTH -> true;
-            default -> false;
-        };
+    public String getValue(ItemStack stack) {
+        // Always show the bottom-half version in item form
+        return CatwalkConstants.PROPERTY_HALF_BOTTOM;
     }
-
 }

@@ -1,23 +1,44 @@
 {
   "multipart": [
     {
-      "apply": {"model": "bettercatwalks:blocks/catwalk_base"}
+      "when": {"AND": [ {"half": "\"bottom\""} ] },
+      "apply": {"model": "bettercatwalks:blocks/catwalk_base_bottom"}
     },
     {
-      "when": {"north": true},
-      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 0 }
+      "when": {"AND": [ {"half": "\"bottom\""}, {"north": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 0 }
     },
     {
-      "when": {"west": true},
-      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 90 }
+      "when": {"AND": [ {"half": "\"bottom\""}, {"west": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 90 }
     },
     {
-      "when": {"south": true},
-      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 180 }
+      "when": {"AND": [ {"half": "\"bottom\""}, {"south": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 180 }
     },
     {
-      "when": {"east": true},
-      "apply": { "model": "bettercatwalks:blocks/catwalk_railing", "y": 270 }
+      "when": {"AND": [ {"half": "\"bottom\""}, {"east": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 270 }
+    },
+    {
+      "when": {"AND": [ {"half": "\"top\""} ] },
+      "apply": {"model": "bettercatwalks:blocks/catwalk_base_top"}
+    },
+    {
+      "when": {"AND": [ {"half": "\"top\""}, {"north": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 0 }
+    },
+    {
+      "when": {"AND": [ {"half": "\"top\""}, {"west": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 90 }
+    },
+    {
+      "when": {"AND": [ {"half": "\"top\""}, {"south": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 180 }
+    },
+    {
+      "when": {"AND": [ {"half": "\"top\""}, {"east": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 270 }
     }
   ]
 }
