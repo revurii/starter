@@ -3,6 +3,7 @@ package com.revurii.bettercatwalks.utils;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -63,11 +64,11 @@ public class CatwalkUtils {
     }
 
     /**
-     * Get the first intercepted AABB between the start and end vector from a list of AABBs to be positioned at the
-     * given coordinates
+     * Get the first intercepted AABB between the start and end vector from a list of AABBs to be offset by the
+     * given x, y, z values
      */
-    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(AxisAlignedBB[] aabbs,
-        int x, int y, int z, Vec3 start, Vec3 end) {
+    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(
+        List<AxisAlignedBB> aabbs, int x, int y, int z, Vec3 start, Vec3 end) {
 
         // Build a HashMap of AABBs and the MOP containing the position of the intercept
         HashMap<AxisAlignedBB, MovingObjectPosition> aabbMopMap = new HashMap<>();
@@ -93,8 +94,8 @@ public class CatwalkUtils {
     /**
      * Get the first intercepted AABB between the start and end vector from a list of AABBs
      */
-    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(AxisAlignedBB[] aabbs,
-        Vec3 start, Vec3 end) {
+    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(
+        List<AxisAlignedBB> aabbs, Vec3 start, Vec3 end) {
         return getFirstInterceptedAABBandMOP(aabbs, 0, 0, 0, start, end);
     }
 

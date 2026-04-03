@@ -1,5 +1,6 @@
 package com.revurii.bettercatwalks.blocks;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +20,11 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
+import com.gtnewhorizon.gtnhlib.blockstate.core.BlockState;
+import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
 import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
+import com.revurii.bettercatwalks.utils.CatwalkConstants;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.relauncher.Side;
@@ -28,15 +32,16 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class BlockCatwalk extends BlockContainer {
 
-    private static final float PX = 0.0625f;
-
-    private static final AxisAlignedBB[] CATWALK_BOUNDS = {
-        // North Railing
-        AxisAlignedBB.getBoundingBox(0, 0.0001, 0, 1, 14 * PX, 2 * PX),
-        // South Railing
-        AxisAlignedBB.getBoundingBox(0, 0.0001, 14 * PX, 1, 14 * PX, 16 * PX),
-        // Base
-        AxisAlignedBB.getBoundingBox(0.0001, 0, 0.0001, 0.9999, 2 * PX, 0.9999) };
+    private static final AxisAlignedBB BASE_BOUNDS = AxisAlignedBB
+        .getBoundingBox(0.0001, 0, 0.0001, 0.9999, 0.1250, 0.9999);
+    private static final AxisAlignedBB SOUTH_BOUNDS = AxisAlignedBB
+        .getBoundingBox(0.0000, 0.0001, 0.8750, 1.0000, 1, 1.0000);
+    private static final AxisAlignedBB NORTH_BOUNDS = AxisAlignedBB
+        .getBoundingBox(0.0000, 0.0001, 0.0000, 1.0000, 1, 0.1250);
+    private static final AxisAlignedBB EAST_BOUNDS = AxisAlignedBB
+        .getBoundingBox(0.8750, 0.0001, 0.0000, 1.0000, 1, 1.000);
+    private static final AxisAlignedBB WEST_BOUNDS = AxisAlignedBB
+        .getBoundingBox(0.0000, 0.0001, 0.0000, 0.1250, 1, 1.000);
 
     public BlockCatwalk(String unlocalizedName) {
         super(Material.iron);
@@ -49,7 +54,12 @@ public class BlockCatwalk extends BlockContainer {
     public void addCollisionBoxesToList(World worldIn, int x, int y, int z, AxisAlignedBB mask,
         List<AxisAlignedBB> list, Entity collider) {
 
-        for (AxisAlignedBB bb : CATWALK_BOUNDS) {
+        // mask = bounding box of the entity colliding with the block (northwest bottom corner to southeast top corner)
+        // list = add bounding boxes that will be active here
+
+        this.setBlockBoundsBasedOnState(worldIn, x, y, z);
+
+        for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(worldIn, x, y, z, 0.5)) {
             this.setBlockBounds(
                 (float) bb.minX,
                 (float) bb.minY,
@@ -61,19 +71,44 @@ public class BlockCatwalk extends BlockContainer {
         }
 
         // Reset
-        this.setBlockBounds(0, 0, 0, 1, 1, 1);
+        this.setBlockBoundsBasedOnState(worldIn, x, y, z);
 
+    }
+
+    @Override
+    public AxisAlignedBB getCollisionBoundingBoxFromPool(World worldIn, int x, int y, int z) {
+        return super.getCollisionBoundingBoxFromPool(worldIn, x, y, z);
+    }
+
+    @Override
+    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, int x, int y, int z) {
+        BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s) {
+            if (s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+                this.setBlockBounds(0, 0, 0, 1, 3, 1);
+                return;
+            }
+        }
+
+        this.setBlockBounds(0, 0, 0, 1, 1, 1);
     }
 
     @Override
     public MovingObjectPosition collisionRayTrace(World worldIn, int x, int y, int z, Vec3 startVec, Vec3 endVec) {
 
-        // startVec = point on the bounding box that the player is looking at, based on setBlockBounds()
+        // TODO: Fix railing collision ray trace when catwalk is in top half state
+
+        // startVec = point on the bounding box that the player is looking at, based on min x, y, z to max x, y, z
         // endVec = farthest point the player can reach if not obstructed
 
         // Get the first AABB in the player's line of sight
-        Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils
-            .getFirstInterceptedAABBandMOP(CATWALK_BOUNDS, x, y, z, startVec, endVec);
+        Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils.getFirstInterceptedAABBandMOP(
+            getCatwalkBoundsBasedOnState(worldIn, x, y, z, 0),
+            x,
+            y,
+            z,
+            startVec,
+            endVec);
         if (aabbMop != null) {
             MovingObjectPosition mop = aabbMop.getValue();
             mop.blockX = x;
@@ -89,6 +124,9 @@ public class BlockCatwalk extends BlockContainer {
     @Override
     @SideOnly(Side.CLIENT)
     public AxisAlignedBB getSelectedBoundingBoxFromPool(World worldIn, int x, int y, int z) {
+
+        // TODO: Fix railing selection box display when catwalk is in top half state
+
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
         // Position of the player's eyes in the world
@@ -106,11 +144,52 @@ public class BlockCatwalk extends BlockContainer {
             start.zCoord + look.zCoord * dist);
 
         Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils
-            .getFirstInterceptedAABBandMOP(CATWALK_BOUNDS, x, y, z, start, end);
+            .getFirstInterceptedAABBandMOP(getCatwalkBoundsBasedOnState(worldIn, x, y, z, 0), x, y, z, start, end);
 
         if (aabbMop != null) return aabbMop.getKey();
         return AxisAlignedBB.getBoundingBox(0, 0, 0, 1, 1, 1);
 
+    }
+
+    /**
+     * Retrieve a list of AABBs based on which half is active and which faces are active on the catwalk.
+     * These AABBs are not yet positioned to the catwalk.
+     *
+     * @param railHeightIncrease will increase the bounds on the railings by the set amount, for use with collision
+     *                           bounds
+     */
+    public List<AxisAlignedBB> getCatwalkBoundsBasedOnState(World worldIn, int x, int y, int z,
+        double railHeightIncrease) {
+
+        // Determine list of possible bounding boxes to be selected based on the state of the catwalk
+        BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
+
+        List<AxisAlignedBB> aabbs = new ArrayList<>();
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_SOUTH) instanceof Boolean south && south) aabbs.add(
+            SOUTH_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_NORTH) instanceof Boolean south && south) aabbs.add(
+            NORTH_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_EAST) instanceof Boolean south && south) aabbs.add(
+            EAST_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_WEST) instanceof Boolean south && south) aabbs.add(
+            WEST_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+
+        if (state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s) {
+
+            aabbs.add(BASE_BOUNDS.copy());
+
+            // Move up all boxes by 14 pixels if catwalk is in the top half state
+            if (s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+                aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
+            }
+
+        }
+
+        return aabbs;
     }
 
     @Override
@@ -164,7 +243,7 @@ public class BlockCatwalk extends BlockContainer {
             Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
 
             // Check entity collisions for each defined AABB instead of using the superclass method
-            for (AxisAlignedBB origBb : CATWALK_BOUNDS) {
+            for (AxisAlignedBB origBb : catwalk.getCatwalkBoundsBasedOnState(world, x, y, z, 0)) {
                 AxisAlignedBB bb = origBb.copy();
                 bb.offset(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord);
                 if (!world.checkNoEntityCollision(bb)) return false;
