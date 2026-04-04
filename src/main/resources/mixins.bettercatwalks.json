@@ -5,7 +5,11 @@
   "refmap": "mixins.bettercatwalks.refmap.json",
   "target": "@env(DEFAULT)",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [],
-  "client": ["MixinBlock_AddCollisionBoxesToList"],
+  "mixins": [
+    "MixinBlock_AddCollisionBoxesToList"
+  ],
+  "client": [
+    "MixinWorld_CatwalkBounds"
+  ],
   "server": []
 }

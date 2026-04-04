@@ -96,8 +96,6 @@ public class BlockCatwalk extends BlockContainer {
     @Override
     public MovingObjectPosition collisionRayTrace(World worldIn, int x, int y, int z, Vec3 startVec, Vec3 endVec) {
 
-        // TODO: Fix railing collision ray trace when catwalk is in top half state
-
         // startVec = point on the bounding box that the player is looking at, based on min x, y, z to max x, y, z
         // endVec = farthest point the player can reach if not obstructed
 
@@ -124,8 +122,6 @@ public class BlockCatwalk extends BlockContainer {
     @Override
     @SideOnly(Side.CLIENT)
     public AxisAlignedBB getSelectedBoundingBoxFromPool(World worldIn, int x, int y, int z) {
-
-        // TODO: Fix railing selection box display when catwalk is in top half state
 
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 

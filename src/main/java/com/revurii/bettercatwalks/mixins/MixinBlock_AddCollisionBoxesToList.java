@@ -24,14 +24,14 @@ public class MixinBlock_AddCollisionBoxesToList {
     /**
      * Check also the block below this; if it is a catwalk in the top half state, add its collision boxes to the list.
      * Without this, an entity standing on the railing of a catwalk in the top half state would glitch out since the
-     * collision list is cleared when they are more than one block away from the catwalk, or so I believe.
+     * collision list is cleared when they are more than one block away from the catwalk (or so I believe).
      */
 
     @Inject(
         method = "addCollisionBoxesToList(Lnet/minecraft/world/World;IIILnet/minecraft/util/AxisAlignedBB;Ljava/util/List;Lnet/minecraft/entity/Entity;)V",
         at = @At(value = "TAIL"))
-    private void betterCatwalks_addExtraCatwalkCollisionBoxes(World worldIn, int x, int y, int z, AxisAlignedBB mask,
-        List<AxisAlignedBB> list, Entity collider, CallbackInfo ci) {
+    private void betterCatwalks_addExtraCatwalkCollisionBoxesToList(World worldIn, int x, int y, int z,
+        AxisAlignedBB mask, List<AxisAlignedBB> list, Entity collider, CallbackInfo ci) {
 
         Block block = worldIn.getBlock(x, y - 1, z);
 
@@ -53,4 +53,5 @@ public class MixinBlock_AddCollisionBoxesToList {
 
         }
     }
+
 }
