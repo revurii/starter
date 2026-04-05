@@ -15,6 +15,7 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
@@ -235,7 +236,7 @@ public class BlockCatwalk extends BlockContainer {
         @Override
         @SideOnly(Side.CLIENT)
         public boolean func_150936_a(World world, int x, int y, int z, int side, EntityPlayer player, ItemStack stack) {
-            // TODO: Check block replaceability (?) since this currently deletes blocks in the way
+
             Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
 
             // Check entity collisions for each defined AABB instead of using the superclass method
@@ -254,40 +255,28 @@ public class BlockCatwalk extends BlockContainer {
             float hitX, float hitY, float hitZ) {
 
             Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
+            int placeX = MathHelper.floor_double(placeVec.xCoord);
+            int placeY = MathHelper.floor_double(placeVec.yCoord);
+            int placeZ = MathHelper.floor_double(placeVec.zCoord);
 
             // Determine if the catwalk can be placed based on some additional conditions
-            if (stack.stackSize == 0) {
-                return false;
-            } else if (!player
-                .canPlayerEdit((int) placeVec.xCoord, (int) placeVec.yCoord, (int) placeVec.zCoord, side, stack)) {
-                    return false;
-                } else if (y == 255 && this.catwalk.getMaterial()
-                    .isSolid()) {
-                        return false;
-                    } else {
-                        if (super.placeBlockAt(
-                            stack,
-                            player,
-                            world,
-                            (int) placeVec.xCoord,
-                            (int) placeVec.yCoord,
-                            (int) placeVec.zCoord,
-                            side,
-                            hitX,
-                            hitY,
-                            hitZ,
-                            0)) {
-                            world.playSoundEffect(
-                                placeVec.xCoord + 0.5,
-                                placeVec.yCoord + 0.5,
-                                placeVec.zCoord + 0.5,
-                                this.catwalk.stepSound.func_150496_b(),
-                                (this.catwalk.stepSound.getVolume() + 1.0F) / 2.0F,
-                                this.catwalk.stepSound.getPitch() * 0.8F);
-                            --stack.stackSize;
-                        }
-                        return true;
-                    }
+            if (stack.stackSize == 0 || !player.canPlayerEdit(placeX, placeY, placeZ, side, stack)
+                || y == 255
+                || !world.getBlock(placeX, placeY, placeZ)
+                    .isReplaceable(world, x, y, z)
+                || !catwalk.canReplace(world, placeX, placeY, placeZ, side, stack)) return false;
+
+            if (super.placeBlockAt(stack, player, world, placeX, placeY, placeZ, side, hitX, hitY, hitZ, 0)) {
+                world.playSoundEffect(
+                    placeX + 0.5,
+                    placeY + 0.5,
+                    placeZ + 0.5,
+                    this.catwalk.stepSound.func_150496_b(),
+                    (this.catwalk.stepSound.getVolume() + 1.0F) / 2.0F,
+                    this.catwalk.stepSound.getPitch() * 0.8F);
+                --stack.stackSize;
+            }
+            return true;
         }
 
     }
