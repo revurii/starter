@@ -3,8 +3,6 @@ package com.revurii.bettercatwalks.events;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
-import com.revurii.bettercatwalks.utils.CatwalkConstants;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
@@ -21,6 +19,8 @@ import net.minecraftforge.event.world.BlockEvent;
 import org.lwjgl.opengl.GL11;
 
 import com.revurii.bettercatwalks.ModBlocks;
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
+import com.revurii.bettercatwalks.utils.CatwalkConstants;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -78,7 +78,8 @@ public class CatwalkEvent {
 
         bb.offset(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord);
 
-        if (teTarget instanceof TileEntityCatwalk tec && tec.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) bb.offset(0, 0.8750, 0);
+        if (teTarget instanceof TileEntityCatwalk tec && tec.getHalf()
+            .equals(CatwalkConstants.PROPERTY_HALF_TOP)) bb.offset(0, 0.8750, 0);
 
         bb = bb.getOffsetBoundingBox(-camX, -camY, -camZ);
         bb = bb.contract(0.001, 0.001, 0.001);

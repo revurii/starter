@@ -83,13 +83,21 @@ public class TileEntityCatwalk extends TileEntity {
         };
     }
 
-    public boolean isSouthActive() { return this.south; }
+    public boolean isSouthActive() {
+        return this.south;
+    }
 
-    public boolean isNorthActive() { return this.north; }
+    public boolean isNorthActive() {
+        return this.north;
+    }
 
-    public boolean isEastActive() { return this.east; }
+    public boolean isEastActive() {
+        return this.east;
+    }
 
-    public boolean isWestActive() { return this.west; }
+    public boolean isWestActive() {
+        return this.west;
+    }
 
     public void updateFace(String face, boolean flag) {
 

@@ -1,6 +1,5 @@
 package com.revurii.bettercatwalks.mixins;
 
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -18,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.revurii.bettercatwalks.ModBlocks;
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
 
 @Mixin(EntityLivingBase.class)
@@ -87,9 +87,9 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
         TileEntity te = worldObj.getTileEntity(startX, startY, startZ);
         // BlockState state = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
 
-        if (block == ModBlocks.CATWALK.get()
-            && te instanceof TileEntityCatwalk teCatwalk
-            && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+        if (block == ModBlocks.CATWALK.get() && te instanceof TileEntityCatwalk teCatwalk
+            && teCatwalk.getHalf()
+                .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
             MovingObjectPosition movingobjectposition = block
                 .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
             if (movingobjectposition != null) return movingobjectposition;
@@ -210,9 +210,9 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
             TileEntity te1 = worldObj.getTileEntity(startX, startY, startZ);
             // BlockState state1 = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
 
-            if (block1 == ModBlocks.CATWALK.get()
-                && te1 instanceof TileEntityCatwalk teCatwalk
-                && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+            if (block1 == ModBlocks.CATWALK.get() && te1 instanceof TileEntityCatwalk teCatwalk
+                && teCatwalk.getHalf()
+                    .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
                 MovingObjectPosition mop = block1
                     .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
                 if (mop != null) return mop;

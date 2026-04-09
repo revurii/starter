@@ -2,7 +2,6 @@ package com.revurii.bettercatwalks.mixins;
 
 import java.util.List;
 
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.tileentity.TileEntity;
@@ -16,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.revurii.bettercatwalks.ModBlocks;
 import com.revurii.bettercatwalks.blocks.BlockCatwalk;
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
 
 @Mixin(Block.class)
@@ -40,7 +40,8 @@ public class MixinBlock_AddCollisionBoxesToList {
             TileEntity te = worldIn.getTileEntity(x, y - 1, z);
             // String half = te.getHalf();
 
-            if (te instanceof TileEntityCatwalk teCatwalk && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+            if (te instanceof TileEntityCatwalk teCatwalk && teCatwalk.getHalf()
+                .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
                 BlockCatwalk catwalk = (BlockCatwalk) block;
                 for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(worldIn, x, y - 1, z, 0.5)) {
                     AxisAlignedBB copy = bb.copy()

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.revurii.bettercatwalks.ModBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
@@ -23,17 +22,18 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizon.gtnhlib.blockstate.core.BlockState;
 import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
+import com.revurii.bettercatwalks.ModBlocks;
 import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockCatwalk extends BlockContainer {
 
@@ -153,15 +153,24 @@ public class BlockCatwalk extends BlockContainer {
         TileEntity te = worldIn.getTileEntity(x, y, z);
         if (te instanceof TileEntityCatwalk teCatwalk) {
 
-            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_SOUTH)) aabbs.add(SOUTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_NORTH)) aabbs.add(NORTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_EAST)) aabbs.add(EAST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_WEST)) aabbs.add(WEST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_SOUTH)) aabbs.add(
+                SOUTH_BOUNDS.copy()
+                    .addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_NORTH)) aabbs.add(
+                NORTH_BOUNDS.copy()
+                    .addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_EAST)) aabbs.add(
+                EAST_BOUNDS.copy()
+                    .addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_WEST)) aabbs.add(
+                WEST_BOUNDS.copy()
+                    .addCoord(0, railHeightIncrease, 0));
 
             aabbs.add(BASE_BOUNDS.copy());
 
             // Move up all boxes by 14 pixels if catwalk is in the top half state
-            if (teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
+            if (teCatwalk.getHalf()
+                .equals(CatwalkConstants.PROPERTY_HALF_TOP)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
 
         }
 
@@ -178,13 +187,22 @@ public class BlockCatwalk extends BlockContainer {
         return aabbs;
     }
 
-    public List<AxisAlignedBB> getCatwalkBoundsOnPlace(String half, boolean south, boolean north, boolean east, boolean west, double railHeightIncrease) {
+    public List<AxisAlignedBB> getCatwalkBoundsOnPlace(String half, boolean south, boolean north, boolean east,
+        boolean west, double railHeightIncrease) {
 
         List<AxisAlignedBB> aabbs = new ArrayList<>();
-        if (south) aabbs.add(SOUTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-        if (north) aabbs.add(NORTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-        if (east) aabbs.add(EAST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
-        if (west) aabbs.add(WEST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        if (south) aabbs.add(
+            SOUTH_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (north) aabbs.add(
+            NORTH_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (east) aabbs.add(
+            EAST_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
+        if (west) aabbs.add(
+            WEST_BOUNDS.copy()
+                .addCoord(0, railHeightIncrease, 0));
         aabbs.add(BASE_BOUNDS.copy());
 
         // Move up all boxes by 14 pixels if catwalk is in the top half state
@@ -208,7 +226,8 @@ public class BlockCatwalk extends BlockContainer {
         state.place(worldIn, x, y, z);
         state.close();
 
-        // Disable the touching railings of any adjacent catwalks if they have the same half property as the placed catwalk
+        // Disable the touching railings of any adjacent catwalks if they have the same half property as the placed
+        // catwalk
         String half = tag.getString(CatwalkConstants.PROPERTY_HALF);
 
         if (worldIn.getBlock(x, y, z + 1) == ModBlocks.CATWALK.get()) {
@@ -230,7 +249,7 @@ public class BlockCatwalk extends BlockContainer {
         }
 
         if (worldIn.getBlock(x + 1, y, z) == ModBlocks.CATWALK.get()) {
-                BlockState eastState = BlockPropertyRegistry.getBlockState(worldIn, x + 1, y, z);
+            BlockState eastState = BlockPropertyRegistry.getBlockState(worldIn, x + 1, y, z);
             if (eastState.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s && s.equals(half)) {
                 eastState.setPropertyValue(CatwalkConstants.PROPERTY_WEST, false);
                 eastState.place(worldIn, x + 1, y, z);
@@ -352,39 +371,55 @@ public class BlockCatwalk extends BlockContainer {
                 if (player.isSneaking()) {
                     switch (facing) {
                         case SOUTH -> {
-                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) east = true;
-                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) west = true;
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isNorthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isNorthActive()) west = true;
                         }
                         case NORTH -> {
-                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) east = true;
-                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) west = true;
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isSouthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isSouthActive()) west = true;
                         }
                         case EAST -> {
-                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) south = true;
-                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) north = true;
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isWestActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isWestActive()) north = true;
                         }
                         case WEST -> {
-                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) south = true;
-                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) north = true;
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isEastActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isEastActive()) north = true;
                         }
                     }
                 } else {
                     switch (facing) {
                         case SOUTH -> {
-                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) east = true;
-                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) west = true;
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isSouthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isSouthActive()) west = true;
                         }
                         case NORTH -> {
-                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) east = true;
-                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) west = true;
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isNorthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isNorthActive()) west = true;
                         }
                         case EAST -> {
-                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) south = true;
-                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) north = true;
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isEastActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isEastActive()) north = true;
                         }
                         case WEST -> {
-                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) south = true;
-                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) north = true;
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isWestActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf()
+                                .equals(half) && tec.isWestActive()) north = true;
                         }
                     }
                 }
@@ -411,10 +446,22 @@ public class BlockCatwalk extends BlockContainer {
             }
 
             // Finally, always disable railings that are adjacent to catwalks with the same half property
-            if (world.getTileEntity(placeX, placeY, placeZ + 1) instanceof TileEntityCatwalk tecSouth && tecSouth.getHalf().equals(half)) south = false;
-            if (world.getTileEntity(placeX, placeY, placeZ - 1) instanceof TileEntityCatwalk tecNorth && tecNorth.getHalf().equals(half)) north = false;
-            if (world.getTileEntity(placeX + 1, placeY, placeZ) instanceof TileEntityCatwalk tecEast && tecEast.getHalf().equals(half)) east = false;
-            if (world.getTileEntity(placeX - 1, placeY, placeZ) instanceof TileEntityCatwalk tecWest && tecWest.getHalf().equals(half)) west = false;
+            if (world.getTileEntity(placeX, placeY, placeZ + 1) instanceof TileEntityCatwalk tecSouth
+                && tecSouth.getHalf()
+                    .equals(half))
+                south = false;
+            if (world.getTileEntity(placeX, placeY, placeZ - 1) instanceof TileEntityCatwalk tecNorth
+                && tecNorth.getHalf()
+                    .equals(half))
+                north = false;
+            if (world.getTileEntity(placeX + 1, placeY, placeZ) instanceof TileEntityCatwalk tecEast
+                && tecEast.getHalf()
+                    .equals(half))
+                east = false;
+            if (world.getTileEntity(placeX - 1, placeY, placeZ) instanceof TileEntityCatwalk tecWest
+                && tecWest.getHalf()
+                    .equals(half))
+                west = false;
 
             // Determine if the catwalk will collide with anything before placing
             List<AxisAlignedBB> aabbs = catwalk.getCatwalkBoundsOnPlace(half, south, north, east, west, 0.5);
