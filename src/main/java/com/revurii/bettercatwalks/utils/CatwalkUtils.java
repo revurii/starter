@@ -13,8 +13,34 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
 import com.revurii.bettercatwalks.ModBlocks;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class CatwalkUtils {
+
+    public static ForgeDirection getCardinalDirection(EntityPlayer player) {
+
+        // Translate yaw to the value seen in F3 (-180 to 180)
+        float yaw = player.rotationYaw;
+        yaw %= 360;
+
+        if (yaw > 180) {
+            yaw -= 360;
+        } else if (yaw < -180) {
+            yaw += 360;
+        }
+
+        if (yaw >= -45 && yaw < 45) {
+            return ForgeDirection.SOUTH;
+        } else if (yaw >= 45 && yaw < 135) {
+            return ForgeDirection.WEST;
+        } else if (yaw >= 135 && yaw <= 180 || yaw >= -180 && yaw < -135) {
+            return ForgeDirection.NORTH;
+        } else if (yaw >= -135 && yaw < -45) {
+            return ForgeDirection.EAST;
+        }
+
+        return ForgeDirection.UNKNOWN;
+    }
 
     /**
      * Get the position that a catwalk would be placed in given the position and side of the block the player
@@ -22,7 +48,7 @@ public class CatwalkUtils {
      */
     public static Vec3 getCatwalkPlacementPosition(EntityPlayer player, World world, int x, int y, int z, int side) {
 
-        // If the player is sneaking or looking at a catwalk, follow normal block placement behavior
+        // If the player is sneaking or not looking at a catwalk, follow normal block placement behavior
         // Otherwise, the catwalk will be placed based on the cardinal direction that the player is facing
 
         if (player.isSneaking() || world.getBlock(x, y, z) != ModBlocks.CATWALK.get()) {
@@ -97,18 +123,6 @@ public class CatwalkUtils {
     public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(
         List<AxisAlignedBB> aabbs, Vec3 start, Vec3 end) {
         return getFirstInterceptedAABBandMOP(aabbs, 0, 0, 0, start, end);
-    }
-
-    private static String msg = "";
-
-    /**
-     * Log a String for testing purposes; will not print the same String more than once
-     */
-    public static void log(String s) {
-        if (!msg.equals(s)) {
-            msg = s;
-            System.out.println("LOG: " + msg);
-        }
     }
 
 }

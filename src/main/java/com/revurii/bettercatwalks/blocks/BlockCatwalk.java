@@ -4,15 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.revurii.bettercatwalks.ModBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
@@ -30,6 +33,7 @@ import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.common.util.ForgeDirection;
 
 public class BlockCatwalk extends BlockContainer {
 
@@ -58,8 +62,6 @@ public class BlockCatwalk extends BlockContainer {
         // mask = bounding box of the entity colliding with the block (northwest bottom corner to southeast top corner)
         // list = add bounding boxes that will be active here
 
-        this.setBlockBoundsBasedOnState(worldIn, x, y, z);
-
         for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(worldIn, x, y, z, 0.5)) {
             this.setBlockBounds(
                 (float) bb.minX,
@@ -72,26 +74,13 @@ public class BlockCatwalk extends BlockContainer {
         }
 
         // Reset
-        this.setBlockBoundsBasedOnState(worldIn, x, y, z);
+        this.setBlockBounds(0, 0, 0, 1, 2, 1);
 
     }
 
     @Override
     public AxisAlignedBB getCollisionBoundingBoxFromPool(World worldIn, int x, int y, int z) {
         return super.getCollisionBoundingBoxFromPool(worldIn, x, y, z);
-    }
-
-    @Override
-    public void setBlockBoundsBasedOnState(IBlockAccess worldIn, int x, int y, int z) {
-        BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s) {
-            if (s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
-                this.setBlockBounds(0, 0, 0, 1, 3, 1);
-                return;
-            }
-        }
-
-        this.setBlockBounds(0, 0, 0, 1, 1, 1);
     }
 
     @Override
@@ -159,34 +148,105 @@ public class BlockCatwalk extends BlockContainer {
         double railHeightIncrease) {
 
         // Determine list of possible bounding boxes to be selected based on the state of the catwalk
-        BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
-
         List<AxisAlignedBB> aabbs = new ArrayList<>();
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_SOUTH) instanceof Boolean south && south) aabbs.add(
-            SOUTH_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_NORTH) instanceof Boolean south && south) aabbs.add(
-            NORTH_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_EAST) instanceof Boolean south && south) aabbs.add(
-            EAST_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_WEST) instanceof Boolean south && south) aabbs.add(
-            WEST_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
 
-        if (state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s) {
+        TileEntity te = worldIn.getTileEntity(x, y, z);
+        if (te instanceof TileEntityCatwalk teCatwalk) {
+
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_SOUTH)) aabbs.add(SOUTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_NORTH)) aabbs.add(NORTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_EAST)) aabbs.add(EAST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+            if (teCatwalk.getRailing(CatwalkConstants.PROPERTY_WEST)) aabbs.add(WEST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
 
             aabbs.add(BASE_BOUNDS.copy());
 
             // Move up all boxes by 14 pixels if catwalk is in the top half state
-            if (s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
-                aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
-            }
+            if (teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
 
         }
 
+        // int meta = 0b1000;
+        // if ((meta & 0b1000) >> 3 == 1) aabbs.add(SOUTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        // if ((meta & 0b0100) >> 3 == 1) aabbs.add(NORTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        // if ((meta & 0b0010) >> 3 == 1) aabbs.add(EAST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        // if ((meta & 0b0001) >> 3 == 1) aabbs.add(WEST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        // aabbs.add(BASE_BOUNDS.copy());
+        //
+        // // Move up all boxes by 14 pixels if catwalk is in the top half state
+        // if (this.isUpper) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
+
         return aabbs;
+    }
+
+    public List<AxisAlignedBB> getCatwalkBoundsOnPlace(String half, boolean south, boolean north, boolean east, boolean west, double railHeightIncrease) {
+
+        List<AxisAlignedBB> aabbs = new ArrayList<>();
+        if (south) aabbs.add(SOUTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        if (north) aabbs.add(NORTH_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        if (east) aabbs.add(EAST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        if (west) aabbs.add(WEST_BOUNDS.copy().addCoord(0, railHeightIncrease, 0));
+        aabbs.add(BASE_BOUNDS.copy());
+
+        // Move up all boxes by 14 pixels if catwalk is in the top half state
+        if (half.equals(CatwalkConstants.PROPERTY_HALF_TOP)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
+
+        return aabbs;
+
+    }
+
+    @Override
+    public void onBlockPlacedBy(World worldIn, int x, int y, int z, EntityLivingBase placer, ItemStack itemIn) {
+
+        BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
+        NBTTagCompound tag = itemIn.getTagCompound();
+
+        state.setPropertyValue(CatwalkConstants.PROPERTY_HALF, tag.getString(CatwalkConstants.PROPERTY_HALF));
+        state.setPropertyValue(CatwalkConstants.PROPERTY_SOUTH, tag.getBoolean(CatwalkConstants.PROPERTY_SOUTH));
+        state.setPropertyValue(CatwalkConstants.PROPERTY_NORTH, tag.getBoolean(CatwalkConstants.PROPERTY_NORTH));
+        state.setPropertyValue(CatwalkConstants.PROPERTY_EAST, tag.getBoolean(CatwalkConstants.PROPERTY_EAST));
+        state.setPropertyValue(CatwalkConstants.PROPERTY_WEST, tag.getBoolean(CatwalkConstants.PROPERTY_WEST));
+        state.place(worldIn, x, y, z);
+        state.close();
+
+        // Disable the touching railings of any adjacent catwalks if they have the same half property as the placed catwalk
+        String half = tag.getString(CatwalkConstants.PROPERTY_HALF);
+
+        if (worldIn.getBlock(x, y, z + 1) == ModBlocks.CATWALK.get()) {
+            BlockState southState = BlockPropertyRegistry.getBlockState(worldIn, x, y, z + 1);
+            if (southState.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s && s.equals(half)) {
+                southState.setPropertyValue(CatwalkConstants.PROPERTY_NORTH, false);
+                southState.place(worldIn, x, y, z + 1);
+                southState.close();
+            }
+        }
+
+        if (worldIn.getBlock(x, y, z - 1) == ModBlocks.CATWALK.get()) {
+            BlockState northState = BlockPropertyRegistry.getBlockState(worldIn, x, y, z - 1);
+            if (northState.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s && s.equals(half)) {
+                northState.setPropertyValue(CatwalkConstants.PROPERTY_SOUTH, false);
+                northState.place(worldIn, x, y, z - 1);
+                northState.close();
+            }
+        }
+
+        if (worldIn.getBlock(x + 1, y, z) == ModBlocks.CATWALK.get()) {
+                BlockState eastState = BlockPropertyRegistry.getBlockState(worldIn, x + 1, y, z);
+            if (eastState.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s && s.equals(half)) {
+                eastState.setPropertyValue(CatwalkConstants.PROPERTY_WEST, false);
+                eastState.place(worldIn, x + 1, y, z);
+                eastState.close();
+            }
+        }
+
+        if (worldIn.getBlock(x - 1, y, z) == ModBlocks.CATWALK.get()) {
+            BlockState westState = BlockPropertyRegistry.getBlockState(worldIn, x - 1, y, z);
+            if (westState.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s && s.equals(half)) {
+                westState.setPropertyValue(CatwalkConstants.PROPERTY_EAST, false);
+                westState.place(worldIn, x - 1, y, z);
+                westState.close();
+            }
+        }
+
     }
 
     @Override
@@ -209,8 +269,6 @@ public class BlockCatwalk extends BlockContainer {
         return ModelISBRH.JSON_ISBRH_ID;
     }
 
-    // Tile Entity-related methods
-
     @Override
     public boolean hasTileEntity(int metadata) {
         return true;
@@ -231,23 +289,13 @@ public class BlockCatwalk extends BlockContainer {
         }
 
         /**
-         * This method apparently checks for potential collisions before onItemUse() is called
+         * This method apparently checks for potential collisions before onItemUse() is called, which has been moved
+         * to onItemUse()
          */
         @Override
         @SideOnly(Side.CLIENT)
         public boolean func_150936_a(World world, int x, int y, int z, int side, EntityPlayer player, ItemStack stack) {
-
-            Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
-
-            // Check entity collisions for each defined AABB instead of using the superclass method
-            for (AxisAlignedBB origBb : catwalk.getCatwalkBoundsBasedOnState(world, x, y, z, 0)) {
-                AxisAlignedBB bb = origBb.copy();
-                bb.offset(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord);
-                if (!world.checkNoEntityCollision(bb)) return false;
-            }
-
             return true;
-
         }
 
         @Override
@@ -266,7 +314,127 @@ public class BlockCatwalk extends BlockContainer {
                     .isReplaceable(world, x, y, z)
                 || !catwalk.canReplace(world, placeX, placeY, placeZ, side, stack)) return false;
 
-            if (super.placeBlockAt(stack, player, world, placeX, placeY, placeZ, side, hitX, hitY, hitZ, 0)) {
+            // Default state: bottom half and enable all railings
+            String half = CatwalkConstants.PROPERTY_HALF_BOTTOM;
+            boolean south = true;
+            boolean north = true;
+            boolean east = true;
+            boolean west = true;
+
+            TileEntity teLook = world.getTileEntity(x, y, z);
+            ForgeDirection facing = CatwalkUtils.getCardinalDirection(player);
+
+            if (teLook instanceof TileEntityCatwalk tecLook) {
+
+                // If looking at a catwalk, copy its half and perpendicular railing properties
+                half = tecLook.getHalf();
+
+                switch (facing) {
+                    case SOUTH, NORTH -> {
+                        east = tecLook.getRailing(CatwalkConstants.PROPERTY_EAST);
+                        west = tecLook.getRailing(CatwalkConstants.PROPERTY_WEST);
+                    }
+                    case EAST, WEST -> {
+                        south = tecLook.getRailing(CatwalkConstants.PROPERTY_SOUTH);
+                        north = tecLook.getRailing(CatwalkConstants.PROPERTY_NORTH);
+                    }
+                }
+
+                // If a catwalk perpendicular to the catwalk the player is looking at has its closest perpendicular
+                // railing to where the catwalk will be placed enabled, also enable the railing perpendicular to the
+                // player to "continue" the railings
+
+                TileEntity southLookTile = world.getTileEntity(x, y, z + 1);
+                TileEntity northLookTile = world.getTileEntity(x, y, z - 1);
+                TileEntity eastLookTile = world.getTileEntity(x + 1, y, z);
+                TileEntity westLookTile = world.getTileEntity(x - 1, y, z);
+
+                if (player.isSneaking()) {
+                    switch (facing) {
+                        case SOUTH -> {
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) west = true;
+                        }
+                        case NORTH -> {
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) west = true;
+                        }
+                        case EAST -> {
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) north = true;
+                        }
+                        case WEST -> {
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) north = true;
+                        }
+                    }
+                } else {
+                    switch (facing) {
+                        case SOUTH -> {
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isSouthActive()) west = true;
+                        }
+                        case NORTH -> {
+                            if (eastLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) east = true;
+                            if (westLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isNorthActive()) west = true;
+                        }
+                        case EAST -> {
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isEastActive()) north = true;
+                        }
+                        case WEST -> {
+                            if (southLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) south = true;
+                            if (northLookTile instanceof TileEntityCatwalk tec && tec.getHalf().equals(half) && tec.isWestActive()) north = true;
+                        }
+                    }
+                }
+
+            } else {
+
+                // If not looking at a catwalk, set the half property based on the hitY value
+                // and the side that the player is looking at; do not place railings along the axis that
+                // the player is facing
+
+                if (hitY >= 0.5 && side != 0 && side != 1) half = CatwalkConstants.PROPERTY_HALF_TOP;
+
+                switch (facing) {
+                    case SOUTH, NORTH -> {
+                        south = false;
+                        north = false;
+                    }
+                    case EAST, WEST -> {
+                        east = false;
+                        west = false;
+                    }
+                }
+
+            }
+
+            // Finally, always disable railings that are adjacent to catwalks with the same half property
+            if (world.getTileEntity(placeX, placeY, placeZ + 1) instanceof TileEntityCatwalk tecSouth && tecSouth.getHalf().equals(half)) south = false;
+            if (world.getTileEntity(placeX, placeY, placeZ - 1) instanceof TileEntityCatwalk tecNorth && tecNorth.getHalf().equals(half)) north = false;
+            if (world.getTileEntity(placeX + 1, placeY, placeZ) instanceof TileEntityCatwalk tecEast && tecEast.getHalf().equals(half)) east = false;
+            if (world.getTileEntity(placeX - 1, placeY, placeZ) instanceof TileEntityCatwalk tecWest && tecWest.getHalf().equals(half)) west = false;
+
+            // Determine if the catwalk will collide with anything before placing
+            List<AxisAlignedBB> aabbs = catwalk.getCatwalkBoundsOnPlace(half, south, north, east, west, 0.5);
+            for (AxisAlignedBB aabb : aabbs) {
+                aabb.offset(placeX, placeY, placeZ);
+                if (!world.checkNoEntityCollision(aabb)) return false;
+            }
+
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setString(CatwalkConstants.PROPERTY_HALF, half);
+            tag.setBoolean(CatwalkConstants.PROPERTY_SOUTH, south);
+            tag.setBoolean(CatwalkConstants.PROPERTY_NORTH, north);
+            tag.setBoolean(CatwalkConstants.PROPERTY_EAST, east);
+            tag.setBoolean(CatwalkConstants.PROPERTY_WEST, west);
+
+            ItemStack fake = stack.copy();
+            fake.stackSize = 1;
+            fake.stackTagCompound = tag;
+
+            if (super.placeBlockAt(fake, player, world, placeX, placeY, placeZ, side, hitX, hitY, hitZ, 0)) {
                 world.playSoundEffect(
                     placeX + 0.5,
                     placeY + 0.5,
@@ -275,6 +443,7 @@ public class BlockCatwalk extends BlockContainer {
                     (this.catwalk.stepSound.getVolume() + 1.0F) / 2.0F,
                     this.catwalk.stepSound.getPitch() * 0.8F);
                 --stack.stackSize;
+                --fake.stackSize;
             }
             return true;
         }

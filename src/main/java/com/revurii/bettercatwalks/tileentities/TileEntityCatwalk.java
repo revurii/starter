@@ -40,7 +40,7 @@ public class TileEntityCatwalk extends TileEntity {
         this.west = compound.getBoolean(CatwalkConstants.PROPERTY_WEST);
         this.half = compound.getString(CatwalkConstants.PROPERTY_HALF);
 
-        // TODO: Confirm if this is a good spot to put this to instantly redraw the model after updating it
+        // TODO: Not sure if this is a good spot to put this to instantly redraw the model after updating the state
         markDirty();
         if (worldObj != null) {
             worldObj.markBlockForUpdate(xCoord, yCoord, zCoord);
@@ -73,7 +73,7 @@ public class TileEntityCatwalk extends TileEntity {
         }
     }
 
-    public boolean getFaceActive(String face) {
+    public boolean getRailing(String face) {
         return switch (face) {
             case CatwalkConstants.PROPERTY_SOUTH -> this.south;
             case CatwalkConstants.PROPERTY_NORTH -> this.north;
@@ -82,6 +82,14 @@ public class TileEntityCatwalk extends TileEntity {
             default -> false;
         };
     }
+
+    public boolean isSouthActive() { return this.south; }
+
+    public boolean isNorthActive() { return this.north; }
+
+    public boolean isEastActive() { return this.east; }
+
+    public boolean isWestActive() { return this.west; }
 
     public void updateFace(String face, boolean flag) {
 

@@ -3,10 +3,14 @@ package com.revurii.bettercatwalks.events;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
+import com.revurii.bettercatwalks.utils.CatwalkConstants;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -45,21 +49,25 @@ public class CatwalkEvent {
         World world = e.player.worldObj;
         EntityPlayer player = e.player;
         MovingObjectPosition target = e.target;
+        TileEntity teTarget = world.getTileEntity(target.blockX, target.blockY, target.blockZ);
 
         // If the player is sneaking, not holding a catwalk, or not looking at a catwalk, do nothing
         if (player.isSneaking() || player.getHeldItem() == null
             || player.getHeldItem()
                 .getItem() != ModBlocks.CATWALK.getItem()
-            || world.getBlock(target.blockX, target.blockY, target.blockZ) != ModBlocks.CATWALK.get()) return;
+            || !(teTarget instanceof TileEntityCatwalk)) return;
 
         Vec3 placeVec = CatwalkUtils
             .getCatwalkPlacementPosition(player, world, target.blockX, target.blockY, target.blockZ, target.sideHit);
 
-        int px = (int) placeVec.xCoord;
-        int py = (int) placeVec.yCoord;
-        int pz = (int) placeVec.zCoord;
+        // If there is something in the way of where a catwalk would be placed, do nothing
+        int px = MathHelper.floor_double(placeVec.xCoord);
+        int py = MathHelper.floor_double(placeVec.yCoord);
+        int pz = MathHelper.floor_double(placeVec.zCoord);
+        Block blockInPlaceCoordinates = world.getBlock(px, py, pz);
+        if (!blockInPlaceCoordinates.isReplaceable(world, px, py, pz)) return;
 
-        if (!world.isAirBlock(px, py, pz)) return;
+        // Draw a box around where the catwalk would be placed
 
         // I have no idea what this does
         double camX = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) e.partialTicks;
@@ -67,7 +75,11 @@ public class CatwalkEvent {
         double camZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) e.partialTicks;
 
         AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(0, 0, 0, 1, 1, 1);
-        bb.offset(px, py, pz);
+
+        bb.offset(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord);
+
+        if (teTarget instanceof TileEntityCatwalk tec && tec.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) bb.offset(0, 0.8750, 0);
+
         bb = bb.getOffsetBoundingBox(-camX, -camY, -camZ);
         bb = bb.contract(0.001, 0.001, 0.001);
 

@@ -2,8 +2,10 @@ package com.revurii.bettercatwalks.mixins;
 
 import java.util.List;
 
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
@@ -12,8 +14,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.gtnewhorizon.gtnhlib.blockstate.core.BlockState;
-import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 import com.revurii.bettercatwalks.ModBlocks;
 import com.revurii.bettercatwalks.blocks.BlockCatwalk;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
@@ -37,10 +37,10 @@ public class MixinBlock_AddCollisionBoxesToList {
 
         if (block == ModBlocks.CATWALK.get()) {
 
-            BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y - 1, z);
+            TileEntity te = worldIn.getTileEntity(x, y - 1, z);
+            // String half = te.getHalf();
 
-            if (state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String half
-                && half.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+            if (te instanceof TileEntityCatwalk teCatwalk && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
                 BlockCatwalk catwalk = (BlockCatwalk) block;
                 for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(worldIn, x, y - 1, z, 0.5)) {
                     AxisAlignedBB copy = bb.copy()

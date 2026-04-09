@@ -1,7 +1,10 @@
 package com.revurii.bettercatwalks.mixins;
 
+import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
@@ -14,8 +17,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.gtnewhorizon.gtnhlib.blockstate.core.BlockState;
-import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 import com.revurii.bettercatwalks.ModBlocks;
 import com.revurii.bettercatwalks.utils.CatwalkConstants;
 
@@ -82,11 +83,14 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
         int startY = MathHelper.floor_double(start.yCoord);
         int startZ = MathHelper.floor_double(start.zCoord);
 
-        BlockState state = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
-        if (state.getBlock() == ModBlocks.CATWALK.get()
-            && state.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s
-            && s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
-            MovingObjectPosition movingobjectposition = state.getBlock()
+        Block block = worldObj.getBlock(startX, startY, startZ);
+        TileEntity te = worldObj.getTileEntity(startX, startY, startZ);
+        // BlockState state = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
+
+        if (block == ModBlocks.CATWALK.get()
+            && te instanceof TileEntityCatwalk teCatwalk
+            && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+            MovingObjectPosition movingobjectposition = block
                 .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
             if (movingobjectposition != null) return movingobjectposition;
         }
@@ -202,12 +206,14 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
                 ++tempVec.zCoord;
             }
 
-            BlockState state1 = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
+            Block block1 = worldObj.getBlock(startX, startY, startZ);
+            TileEntity te1 = worldObj.getTileEntity(startX, startY, startZ);
+            // BlockState state1 = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
 
-            if (state1.getBlock() == ModBlocks.CATWALK.get()
-                && state1.getPropertyValue(CatwalkConstants.PROPERTY_HALF) instanceof String s
-                && s.equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
-                MovingObjectPosition mop = state1.getBlock()
+            if (block1 == ModBlocks.CATWALK.get()
+                && te1 instanceof TileEntityCatwalk teCatwalk
+                && teCatwalk.getHalf().equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+                MovingObjectPosition mop = block1
                     .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
                 if (mop != null) return mop;
             }

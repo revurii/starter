@@ -42,7 +42,7 @@ public class FaceCatwalkProperty implements BlockProperty<Boolean> {
     public Boolean getValue(IBlockAccess world, int x, int y, int z) {
         TileEntity te = world.getTileEntity(x, y, z);
         if (te instanceof TileEntityCatwalk teCatwalk) {
-            return teCatwalk.getFaceActive(FACE);
+            return teCatwalk.getRailing(FACE);
         }
         return false;
     }
