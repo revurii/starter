@@ -1,6 +1,2 @@
-tile.block1.name=Block 1
-item.item1.name=Item 1
-tile.metablock_0.name=Metablock 0
-tile.metablock_1.name=Metablock 1
-tile.metablock_2.name=Metablock 2
 tile.catwalk.name=Catwalk
+item.blowtorch.name=Blowtorch

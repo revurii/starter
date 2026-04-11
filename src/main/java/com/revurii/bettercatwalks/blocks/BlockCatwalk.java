@@ -3,6 +3,7 @@ package com.revurii.bettercatwalks.blocks;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -11,6 +12,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
@@ -25,6 +27,7 @@ import com.gtnewhorizon.gtnhlib.blockstate.core.BlockState;
 import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
 import com.gtnewhorizon.gtnhlib.client.model.ModelISBRH;
 import com.revurii.bettercatwalks.ModBlocks;
+import com.revurii.bettercatwalks.items.ItemBlowtorch;
 import com.revurii.bettercatwalks.utils.CatwalkBit;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
@@ -37,21 +40,23 @@ public class BlockCatwalk extends Block {
     // ex. 0b000000 -> IS_UPPER, BASE, SOUTH, NORTH, EAST, WEST
 
     private static final AxisAlignedBB BASE_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0001, 0, 0.0001, 0.9999, 0.1250, 0.9999);
+        .getBoundingBox(0.0001, 0.0000, 0.0000, 1.0000, 0.1250, 1.0000);
     private static final AxisAlignedBB SOUTH_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.0001, 0.8750, 1.0000, 1, 1.0000);
+        .getBoundingBox(0.0000, 0.1250, 0.8750, 1.0000, 1.0000, 1.0000);
     private static final AxisAlignedBB NORTH_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.0001, 0.0000, 1.0000, 1, 0.1250);
+        .getBoundingBox(0.0000, 0.1250, 0.0000, 1.0000, 1.0000, 0.1250);
     private static final AxisAlignedBB EAST_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.8750, 0.0001, 0.0000, 1.0000, 1, 1.000);
+        .getBoundingBox(0.8750, 0.1250, 0.0000, 1.0000, 1.0000, 1.0000);
     private static final AxisAlignedBB WEST_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.0001, 0.0000, 0.1250, 1, 1.000);
+        .getBoundingBox(0.0000, 0.1250, 0.0000, 0.1250, 1.0000, 1.0000);
 
     public BlockCatwalk(String unlocalizedName) {
         super(Material.iron);
         this.setBlockName(unlocalizedName);
-        this.setCreativeTab(CreativeTabs.tabBlock);
+        this.setCreativeTab(CreativeTabs.tabMisc);
         this.setStepSound(soundTypeMetal);
+        this.setHardness(1.5F);
+        this.setHarvestLevel("pickaxe", 0);
     }
 
     @Override
@@ -241,6 +246,71 @@ public class BlockCatwalk extends Block {
     }
 
     @Override
+    public boolean onBlockActivated(World worldIn, int x, int y, int z, EntityPlayer player, int side, float subX,
+        float subY, float subZ) {
+
+        if (player.getHeldItem() != null && player.getHeldItem()
+            .getItem() instanceof ItemBlowtorch) {
+
+            int meta = worldIn.getBlockMetadata(x, y, z);
+
+            double adjustHeight = 0;
+            if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) adjustHeight = 0.8750;
+
+            AxisAlignedBB baseBb = BASE_BOUNDS.copy()
+                .offset(0, adjustHeight, 0);
+            AxisAlignedBB southBb = SOUTH_BOUNDS.copy()
+                .offset(0, adjustHeight, 0);
+            AxisAlignedBB northBb = NORTH_BOUNDS.copy()
+                .offset(0, adjustHeight, 0);
+            AxisAlignedBB eastBb = EAST_BOUNDS.copy()
+                .offset(0, adjustHeight, 0);
+            AxisAlignedBB westBb = WEST_BOUNDS.copy()
+                .offset(0, adjustHeight, 0);
+
+            BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
+
+            if (subX >= southBb.minX && subX <= southBb.maxX
+                && subY >= southBb.minY
+                && subY <= southBb.maxY
+                && subZ >= southBb.minZ
+                && subZ <= southBb.maxZ) {
+                state.setPropertyValue(CatwalkBit.SOUTH.toString(), !CatwalkBit.isActive(meta, CatwalkBit.SOUTH));
+            }
+
+            if (subX >= northBb.minX && subX <= northBb.maxX
+                && subY >= northBb.minY
+                && subY <= northBb.maxY
+                && subZ >= northBb.minZ
+                && subZ <= northBb.maxZ) {
+                state.setPropertyValue(CatwalkBit.NORTH.toString(), !CatwalkBit.isActive(meta, CatwalkBit.NORTH));
+            }
+
+            if (subX >= eastBb.minX && subX <= eastBb.maxX
+                && subY >= eastBb.minY
+                && subY <= eastBb.maxY
+                && subZ >= eastBb.minZ
+                && subZ <= eastBb.maxZ) {
+                state.setPropertyValue(CatwalkBit.EAST.toString(), !CatwalkBit.isActive(meta, CatwalkBit.EAST));
+            }
+
+            if (subX >= westBb.minX && subX <= westBb.maxX
+                && subY >= westBb.minY
+                && subY <= westBb.maxY
+                && subZ >= westBb.minZ
+                && subZ <= westBb.maxZ) {
+                state.setPropertyValue(CatwalkBit.WEST.toString(), !CatwalkBit.isActive(meta, CatwalkBit.WEST));
+            }
+
+            state.place(worldIn, x, y, z);
+            state.close();
+
+        }
+
+        return false;
+    }
+
+    @Override
     public boolean shouldSideBeRendered(IBlockAccess worldIn, int x, int y, int z, int side) {
         return false;
     }
@@ -258,6 +328,16 @@ public class BlockCatwalk extends Block {
     @Override
     public int getRenderType() {
         return ModelISBRH.JSON_ISBRH_ID;
+    }
+
+    @Override
+    public Item getItemDropped(int meta, Random random, int fortune) {
+        return ModBlocks.CATWALK.getItem();
+    }
+
+    @Override
+    public int quantityDropped(int meta, int fortune, Random random) {
+        return 1;
     }
 
     public static class ItemCatwalk extends ItemBlock {

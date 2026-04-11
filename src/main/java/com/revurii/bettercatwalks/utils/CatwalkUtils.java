@@ -1,7 +1,5 @@
 package com.revurii.bettercatwalks.utils;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +95,10 @@ public class CatwalkUtils {
         List<AxisAlignedBB> aabbs, int x, int y, int z, Vec3 start, Vec3 end) {
 
         // Build a HashMap of AABBs and the MOP containing the position of the intercept
-        HashMap<AxisAlignedBB, MovingObjectPosition> aabbMopMap = new HashMap<>();
+
+        AxisAlignedBB closestBb = null;
+        MovingObjectPosition closestMop = null;
+
         for (AxisAlignedBB aabb : aabbs) {
 
             // Add x, y, z to min and max of bounds on each axis to position it to the coordinates of the block
@@ -106,23 +107,72 @@ public class CatwalkUtils {
 
             // Get the first point between the start and end vector that is on the bounds of the box
             MovingObjectPosition hit = currentBb.calculateIntercept(start, end);
-            if (hit != null) aabbMopMap.put(currentBb, hit);
+            if (hit != null) {
+
+                if (closestBb == null) {
+                    closestBb = currentBb;
+                    closestMop = hit;
+                    continue;
+                }
+
+                if (hit.hitVec.distanceTo(start) < closestMop.hitVec.distanceTo(start)) {
+                    closestBb = currentBb;
+                    closestMop = hit;
+                    continue;
+                }
+
+                // If two bounding boxes were hit, use the box that has the closest opposite face
+                if (hit.hitVec.distanceTo(start) == closestMop.hitVec.distanceTo(start)) {
+
+                    Vec3 hitVec = hit.hitVec;
+                    double closestOppositeX = hitVec.xCoord;
+                    double closestOppositeY = hitVec.yCoord;
+                    double closestOppositeZ = hitVec.zCoord;
+                    double currentOppositeX = hitVec.xCoord;
+                    double currentOppositeY = hitVec.yCoord;
+                    double currentOppositeZ = hitVec.zCoord;
+
+                    if (hitVec.xCoord == closestBb.minX) closestOppositeX = closestBb.maxX;
+                    if (hitVec.xCoord == closestBb.maxX) closestOppositeX = closestBb.minX;
+                    if (hitVec.yCoord == closestBb.minY) closestOppositeY = closestBb.maxY;
+                    if (hitVec.yCoord == closestBb.maxY) closestOppositeY = closestBb.minY;
+                    if (hitVec.zCoord == closestBb.minZ) closestOppositeZ = closestBb.maxZ;
+                    if (hitVec.zCoord == closestBb.maxZ) closestOppositeZ = closestBb.minZ;
+
+                    if (hitVec.xCoord == currentBb.minX) currentOppositeX = currentBb.maxX;
+                    if (hitVec.xCoord == currentBb.maxX) currentOppositeX = currentBb.minX;
+                    if (hitVec.yCoord == currentBb.minY) currentOppositeY = currentBb.maxY;
+                    if (hitVec.yCoord == currentBb.maxY) currentOppositeY = currentBb.minY;
+                    if (hitVec.zCoord == currentBb.minZ) currentOppositeZ = currentBb.maxZ;
+                    if (hitVec.zCoord == currentBb.maxZ) currentOppositeZ = currentBb.minZ;
+
+                    Vec3 closestOpposite = Vec3
+                        .createVectorHelper(closestOppositeX, closestOppositeY, closestOppositeZ);
+                    Vec3 currentOpposite = Vec3
+                        .createVectorHelper(currentOppositeX, currentOppositeY, currentOppositeZ);
+
+                    if (currentOpposite.distanceTo(hitVec) < closestOpposite.distanceTo(hitVec)) {
+                        closestBb = currentBb;
+                        closestMop = hit;
+                    }
+
+                }
+
+            }
 
         }
 
         // Return the first intercepted AABB and its MOP
-        if (!aabbMopMap.isEmpty()) return Collections
-            .min(aabbMopMap.entrySet(), Comparator.comparingDouble(o -> o.getValue().hitVec.distanceTo(start)));
+        if (closestBb != null) {
+            HashMap<AxisAlignedBB, MovingObjectPosition> closest = new HashMap<>();
+            closest.put(closestBb, closestMop);
+            return closest.entrySet()
+                .stream()
+                .findFirst()
+                .get();
+        }
 
         return null;
-    }
-
-    /**
-     * Get the first intercepted AABB between the start and end vector from a list of AABBs
-     */
-    public static Map.Entry<AxisAlignedBB, MovingObjectPosition> getFirstInterceptedAABBandMOP(
-        List<AxisAlignedBB> aabbs, Vec3 start, Vec3 end) {
-        return getFirstInterceptedAABBandMOP(aabbs, 0, 0, 0, start, end);
     }
 
 }
