@@ -3,6 +3,10 @@ package com.revurii.bettercatwalks;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.gtnewhorizon.gtnhlib.blockstate.registry.BlockPropertyRegistry;
+import com.revurii.bettercatwalks.properties.MetaCatwalkProperty;
+import com.revurii.bettercatwalks.utils.CatwalkBit;
+
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -39,7 +43,24 @@ public class BetterCatwalks {
     // load "Do your mod setup. Build whatever data structures you care about. Register recipes." (Remove if not needed)
     public void init(FMLInitializationEvent event) {
         proxy.init(event);
-        ModTileEntities.init();
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.WEST));
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.EAST));
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.NORTH));
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.SOUTH));
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.BASE));
+        BlockPropertyRegistry.registerProperty(ModBlocks.CATWALK.get(), new MetaCatwalkProperty(CatwalkBit.IS_UPPER));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.WEST));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.EAST));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.NORTH));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.SOUTH));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.BASE));
+        BlockPropertyRegistry
+            .registerProperty(ModBlocks.CATWALK.getItemBlock(), new MetaCatwalkProperty(CatwalkBit.IS_UPPER));
     }
 
     @Mod.EventHandler

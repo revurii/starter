@@ -1,47 +1,25 @@
 package com.revurii.bettercatwalks.events;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.world.BlockEvent;
 
 import org.lwjgl.opengl.GL11;
 
 import com.revurii.bettercatwalks.ModBlocks;
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
-import com.revurii.bettercatwalks.utils.CatwalkConstants;
+import com.revurii.bettercatwalks.blocks.BlockCatwalk;
+import com.revurii.bettercatwalks.utils.CatwalkBit;
 import com.revurii.bettercatwalks.utils.CatwalkUtils;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class CatwalkEvent {
-
-    List<Double> currentBounds = new ArrayList<>();
-
-    // @SubscribeEvent
-    public void onInteract(PlayerInteractEvent e) {
-        // System.out.println("onInteract()");
-    }
-
-    // @SubscribeEvent
-    public void onPlace(BlockEvent.PlaceEvent e) {
-        World world = e.player.worldObj;
-        Block targetBlock = e.placedAgainst;
-        if (targetBlock == ModBlocks.CATWALK.get()) {
-            return;
-        }
-    }
 
     @SubscribeEvent
     public void onDrawCatwalkHighlight(DrawBlockHighlightEvent e) {
@@ -49,13 +27,13 @@ public class CatwalkEvent {
         World world = e.player.worldObj;
         EntityPlayer player = e.player;
         MovingObjectPosition target = e.target;
-        TileEntity teTarget = world.getTileEntity(target.blockX, target.blockY, target.blockZ);
+        Block targetBlock = world.getBlock(target.blockX, target.blockY, target.blockZ);
 
         // If the player is sneaking, not holding a catwalk, or not looking at a catwalk, do nothing
         if (player.isSneaking() || player.getHeldItem() == null
             || player.getHeldItem()
                 .getItem() != ModBlocks.CATWALK.getItem()
-            || !(teTarget instanceof TileEntityCatwalk)) return;
+            || !(targetBlock instanceof BlockCatwalk)) return;
 
         Vec3 placeVec = CatwalkUtils
             .getCatwalkPlacementPosition(player, world, target.blockX, target.blockY, target.blockZ, target.sideHit);
@@ -78,8 +56,8 @@ public class CatwalkEvent {
 
         bb.offset(placeVec.xCoord, placeVec.yCoord, placeVec.zCoord);
 
-        if (teTarget instanceof TileEntityCatwalk tec && tec.getHalf()
-            .equals(CatwalkConstants.PROPERTY_HALF_TOP)) bb.offset(0, 0.8750, 0);
+        int targetMeta = world.getBlockMetadata(target.blockX, target.blockY, target.blockZ);
+        if (CatwalkBit.isActive(targetMeta, CatwalkBit.IS_UPPER)) bb.offset(0, 0.8750, 0);
 
         bb = bb.getOffsetBoundingBox(-camX, -camY, -camZ);
         bb = bb.contract(0.001, 0.001, 0.001);

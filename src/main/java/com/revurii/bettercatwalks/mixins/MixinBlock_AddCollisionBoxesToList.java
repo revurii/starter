@@ -4,7 +4,6 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
@@ -13,10 +12,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.revurii.bettercatwalks.ModBlocks;
 import com.revurii.bettercatwalks.blocks.BlockCatwalk;
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
-import com.revurii.bettercatwalks.utils.CatwalkConstants;
+import com.revurii.bettercatwalks.utils.CatwalkBit;
 
 @Mixin(Block.class)
 public class MixinBlock_AddCollisionBoxesToList {
@@ -35,20 +32,15 @@ public class MixinBlock_AddCollisionBoxesToList {
 
         Block block = worldIn.getBlock(x, y - 1, z);
 
-        if (block == ModBlocks.CATWALK.get()) {
+        if (block instanceof BlockCatwalk catwalk) {
 
-            TileEntity te = worldIn.getTileEntity(x, y - 1, z);
-            // String half = te.getHalf();
+            int meta = worldIn.getBlockMetadata(x, y - 1, z);
 
-            if (te instanceof TileEntityCatwalk teCatwalk && teCatwalk.getHalf()
-                .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
-                BlockCatwalk catwalk = (BlockCatwalk) block;
-                for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(worldIn, x, y - 1, z, 0.5)) {
+            if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) {
+                for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(meta, 0.5)) {
                     AxisAlignedBB copy = bb.copy()
                         .offset(x, y - 1, z);
-                    if (mask.intersectsWith(copy)) {
-                        list.add(copy);
-                    }
+                    if (mask.intersectsWith(copy)) list.add(copy);
                 }
             }
 

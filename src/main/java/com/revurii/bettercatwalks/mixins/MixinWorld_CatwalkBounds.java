@@ -3,7 +3,6 @@ package com.revurii.bettercatwalks.mixins;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
@@ -17,8 +16,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.revurii.bettercatwalks.ModBlocks;
-import com.revurii.bettercatwalks.tileentities.TileEntityCatwalk;
-import com.revurii.bettercatwalks.utils.CatwalkConstants;
+import com.revurii.bettercatwalks.blocks.BlockCatwalk;
+import com.revurii.bettercatwalks.utils.CatwalkBit;
 
 @Mixin(EntityLivingBase.class)
 public abstract class MixinWorld_CatwalkBounds extends Entity {
@@ -84,12 +83,10 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
         int startZ = MathHelper.floor_double(start.zCoord);
 
         Block block = worldObj.getBlock(startX, startY, startZ);
-        TileEntity te = worldObj.getTileEntity(startX, startY, startZ);
-        // BlockState state = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
+        int meta = worldObj.getBlockMetadata(startX, startY, startZ);
+        // TileEntity te = worldObj.getTileEntity(startX, startY, startZ);
 
-        if (block == ModBlocks.CATWALK.get() && te instanceof TileEntityCatwalk teCatwalk
-            && teCatwalk.getHalf()
-                .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+        if (block instanceof BlockCatwalk && CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) {
             MovingObjectPosition movingobjectposition = block
                 .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
             if (movingobjectposition != null) return movingobjectposition;
@@ -207,12 +204,10 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
             }
 
             Block block1 = worldObj.getBlock(startX, startY, startZ);
-            TileEntity te1 = worldObj.getTileEntity(startX, startY, startZ);
-            // BlockState state1 = BlockPropertyRegistry.getBlockState(worldObj, startX, startY, startZ);
+            int meta1 = worldObj.getBlockMetadata(startX, startY, startZ);
+            // TileEntity te1 = worldObj.getTileEntity(startX, startY, startZ);
 
-            if (block1 == ModBlocks.CATWALK.get() && te1 instanceof TileEntityCatwalk teCatwalk
-                && teCatwalk.getHalf()
-                    .equals(CatwalkConstants.PROPERTY_HALF_TOP)) {
+            if (block1 == ModBlocks.CATWALK.get() && CatwalkBit.isActive(meta1, CatwalkBit.IS_UPPER)) {
                 MovingObjectPosition mop = block1
                     .collisionRayTrace(worldObj, startX, startY, startZ, realStart, realEnd);
                 if (mop != null) return mop;
