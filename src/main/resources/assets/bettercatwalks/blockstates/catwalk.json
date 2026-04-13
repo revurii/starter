@@ -1,54 +1,76 @@
 {
   "multipart": [
     {
-      "when": {"AND": [ {
-        "isUpper": false} ] },
+      "when": {"AND": [ {"isUpper": false}, {"base":  true} ] },
       "apply": {"model": "bettercatwalks:blocks/catwalk_base_bottom"}
     },
     {
-      "when": {"AND": [ {
-        "isUpper": false}, {"north": true} ] },
+      "when": {"AND": [ {"isUpper": false}, {"north": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 0 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": false}, {"west": true} ] },
+      "when": {"AND": [ {"isUpper": false}, {"west": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 90 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": false}, {"south": true} ] },
+      "when": {"AND": [ {"isUpper": false}, {"south": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 180 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": false}, {"east": true} ] },
+      "when": {"AND": [ {"isUpper": false}, {"east": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom", "y": 270 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": true} ] },
+      "when": {"AND": [ {"isUpper": true}, {"base":  true} ] },
       "apply": {"model": "bettercatwalks:blocks/catwalk_base_top"}
     },
     {
-      "when": {"AND": [ {
-        "isUpper": true}, {"north": true} ] },
+      "when": {"AND": [ {"isUpper": true}, {"north": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 0 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": true}, {"west": true} ] },
+      "when": {"AND": [ {"isUpper": true}, {"west": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 90 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": true}, {"south": true} ] },
+      "when": {"AND": [ {"isUpper": true}, {"south": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 180 }
     },
     {
-      "when": {"AND": [ {
-        "isUpper": true}, {"east": true} ] },
+      "when": {"AND": [ {"isUpper": true}, {"east": true} ] },
       "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top", "y": 270 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  false}, {"base": false}, {"north": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom_base_strip", "y": 0 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  false}, {"base": false}, {"west": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom_base_strip", "y": 90 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  false}, {"base": false}, {"south": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom_base_strip", "y": 180 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  false}, {"base": false}, {"east": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_bottom_base_strip", "y": 270 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  true}, {"base": false}, {"north": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top_base_strip", "y": 0 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  true}, {"base": false}, {"west": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top_base_strip", "y": 90 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  true}, {"base": false}, {"south": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top_base_strip", "y": 180 }
+    },
+    {
+      "when": {"AND": [ {"isUpper":  true}, {"base": false}, {"east": true} ] },
+      "apply": { "model": "bettercatwalks:blocks/catwalk_railing_top_base_strip", "y": 270 }
     }
   ]
 }

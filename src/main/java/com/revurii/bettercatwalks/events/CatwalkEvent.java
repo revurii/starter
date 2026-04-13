@@ -1,7 +1,9 @@
 package com.revurii.bettercatwalks.events;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
@@ -9,6 +11,7 @@ import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 
 import org.lwjgl.opengl.GL11;
 
@@ -103,6 +106,23 @@ public class CatwalkEvent {
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glPopMatrix();
 
+    }
+
+    @SubscribeEvent
+    public void onPlayerOnTopOfCatwalk(LivingEvent.LivingUpdateEvent e) {
+        EntityLivingBase entity = e.entityLiving;
+        if (entity instanceof EntityClientPlayerMP player && entity.onGround) {
+            Block block = entity.worldObj.getBlock(
+                MathHelper.floor_double(entity.posX),
+                MathHelper.floor_double(entity.boundingBox.minY - 0.001F),
+                MathHelper.floor_double(entity.posZ));
+            if (block instanceof BlockCatwalk) {
+                if (player.motionX == 0 && player.motionZ == 0) return;
+                if (player.isSneaking()) return;
+                player.motionX *= 1.4;
+                player.motionZ *= 1.4;
+            }
+        }
     }
 
 }

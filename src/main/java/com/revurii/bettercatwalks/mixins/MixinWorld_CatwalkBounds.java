@@ -84,7 +84,6 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
 
         Block block = worldObj.getBlock(startX, startY, startZ);
         int meta = worldObj.getBlockMetadata(startX, startY, startZ);
-        // TileEntity te = worldObj.getTileEntity(startX, startY, startZ);
 
         if (block instanceof BlockCatwalk && CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) {
             MovingObjectPosition movingobjectposition = block
@@ -205,7 +204,6 @@ public abstract class MixinWorld_CatwalkBounds extends Entity {
 
             Block block1 = worldObj.getBlock(startX, startY, startZ);
             int meta1 = worldObj.getBlockMetadata(startX, startY, startZ);
-            // TileEntity te1 = worldObj.getTileEntity(startX, startY, startZ);
 
             if (block1 == ModBlocks.CATWALK.get() && CatwalkBit.isActive(meta1, CatwalkBit.IS_UPPER)) {
                 MovingObjectPosition mop = block1

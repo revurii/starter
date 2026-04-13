@@ -37,7 +37,7 @@ public class MixinBlock_AddCollisionBoxesToList {
             int meta = worldIn.getBlockMetadata(x, y - 1, z);
 
             if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) {
-                for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(meta, 0.5)) {
+                for (AxisAlignedBB bb : catwalk.getCatwalkBoundsBasedOnState(meta, 0.5, false)) {
                     AxisAlignedBB copy = bb.copy()
                         .offset(x, y - 1, z);
                     if (mask.intersectsWith(copy)) list.add(copy);

@@ -122,6 +122,15 @@ public class CatwalkUtils {
                 }
 
                 // If two bounding boxes were hit, use the box that has the closest opposite face
+                // TODO: Use the box that has the closest opposite face based on the direction the player is looking
+                // instead of the hit vector
+                // force up down when pitch is +/- 60 deg
+                // DOWN -> +y to -y
+                // UP -> -y to +y
+                // SOUTH -> -z to +z
+                // NORTH -> +z to -z
+                // EAST -> -x to +x
+                // WEST -> +x to -x
                 if (hit.hitVec.distanceTo(start) == closestMop.hitVec.distanceTo(start)) {
 
                     Vec3 hitVec = hit.hitVec;

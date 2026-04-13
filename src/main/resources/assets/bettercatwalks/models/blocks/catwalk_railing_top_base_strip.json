@@ -1,0 +1,24 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"0": "bettercatwalks:models/catwalk",
+		"particle": "bettercatwalks:models/catwalk"
+	},
+	"elements": [
+		{
+			"name": "railing_bottom",
+			"from": [0, 14, 0],
+			"to": [16, 16, 2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 14, 0]},
+			"faces": {
+				"north": {"uv": [4, 7.5, 0, 8], "texture": "#0"},
+				"east": {"uv": [3.5, 7.5, 4, 8], "texture": "#0"},
+				"south": {"uv": [4, 7.5, 0, 8], "texture": "#0"},
+				"west": {"uv": [0.5, 7.5, 0, 8], "texture": "#0"},
+				"up": {"uv": [0, 7, 4, 6.5], "texture": "#0"},
+				"down": {"uv": [0, 6.5, 4, 7], "texture": "#0"}
+			}
+		}
+	]
+}

@@ -1,6 +1,7 @@
 package com.revurii.bettercatwalks.blocks;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -8,7 +9,6 @@ import java.util.Random;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -40,7 +40,9 @@ public class BlockCatwalk extends Block {
     // ex. 0b000000 -> IS_UPPER, BASE, SOUTH, NORTH, EAST, WEST
 
     private static final AxisAlignedBB BASE_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0001, 0.0000, 0.0000, 1.0000, 0.1250, 1.0000);
+        .getBoundingBox(0.0000, 0.0000, 0.0000, 1.0000, 0.1250, 1.0000);
+    private static final AxisAlignedBB BASE_BOUNDS_DISABLED = AxisAlignedBB
+        .getBoundingBox(0.3750, 0.0000, 0.3750, 0.6250, 0.1250, 0.6250);
     private static final AxisAlignedBB SOUTH_BOUNDS = AxisAlignedBB
         .getBoundingBox(0.0000, 0.1250, 0.8750, 1.0000, 1.0000, 1.0000);
     private static final AxisAlignedBB NORTH_BOUNDS = AxisAlignedBB
@@ -53,7 +55,6 @@ public class BlockCatwalk extends Block {
     public BlockCatwalk(String unlocalizedName) {
         super(Material.iron);
         this.setBlockName(unlocalizedName);
-        this.setCreativeTab(CreativeTabs.tabMisc);
         this.setStepSound(soundTypeMetal);
         this.setHardness(1.5F);
         this.setHarvestLevel("pickaxe", 0);
@@ -66,7 +67,7 @@ public class BlockCatwalk extends Block {
         // mask = bounding box of the entity colliding with the block (northwest bottom corner to southeast top corner)
         // list = add bounding boxes that will be active here
 
-        for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0.5)) {
+        for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0.5, false)) {
             this.setBlockBounds(
                 (float) bb.minX,
                 (float) bb.minY,
@@ -90,7 +91,7 @@ public class BlockCatwalk extends Block {
 
         // Get the first AABB in the player's line of sight
         Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils.getFirstInterceptedAABBandMOP(
-            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0),
+            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0, true),
             x,
             y,
             z,
@@ -129,7 +130,7 @@ public class BlockCatwalk extends Block {
             start.zCoord + look.zCoord * dist);
 
         Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils.getFirstInterceptedAABBandMOP(
-            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0),
+            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0, true),
             x,
             y,
             z,
@@ -146,26 +147,46 @@ public class BlockCatwalk extends Block {
      * These AABBs are not yet positioned to the catwalk.
      *
      * @param railHeightIncrease will increase the height of the railings by the set amount, for use with collisions
+     * @param forSelection       will force the base bounding box to appear, for use with selection
      */
-    public List<AxisAlignedBB> getCatwalkBoundsBasedOnState(int meta, double railHeightIncrease) {
+    public List<AxisAlignedBB> getCatwalkBoundsBasedOnState(int meta, double railHeightIncrease, boolean forSelection) {
 
-        // Determine list of possible bounding boxes to be selected based on the state of the catwalk
+        AxisAlignedBB base = BASE_BOUNDS.copy();
+
+        // If forSelection and base is disabled, use the smaller base selection box
+        if (forSelection && !CatwalkBit.isActive(meta, CatwalkBit.BASE)) base = BASE_BOUNDS_DISABLED.copy();
+
+        AxisAlignedBB south = SOUTH_BOUNDS.copy()
+            .addCoord(0, railHeightIncrease, 0);
+        AxisAlignedBB north = NORTH_BOUNDS.copy()
+            .addCoord(0, railHeightIncrease, 0);
+        AxisAlignedBB east = EAST_BOUNDS.copy()
+            .addCoord(0, railHeightIncrease, 0);
+        AxisAlignedBB west = WEST_BOUNDS.copy()
+            .addCoord(0, railHeightIncrease, 0);
+
+        // Extend railing bounds downwards if base is disabled
+        if (!CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
+            south.minY = base.minY;
+            north.minY = base.minY;
+            east.minY = base.minY;
+            west.minY = base.minY;
+        }
+
+        // Lower railing bounds height if it is disabled
+        if (forSelection) {
+            if (!CatwalkBit.isActive(meta, CatwalkBit.SOUTH)) south.maxY = base.maxY;
+            if (!CatwalkBit.isActive(meta, CatwalkBit.NORTH)) north.maxY = base.maxY;
+            if (!CatwalkBit.isActive(meta, CatwalkBit.EAST)) east.maxY = base.maxY;
+            if (!CatwalkBit.isActive(meta, CatwalkBit.WEST)) west.maxY = base.maxY;
+        }
+
         List<AxisAlignedBB> aabbs = new ArrayList<>();
-
-        if (CatwalkBit.isActive(meta, CatwalkBit.BASE)) aabbs.add(BASE_BOUNDS.copy());
-
-        if (CatwalkBit.isActive(meta, CatwalkBit.SOUTH)) aabbs.add(
-            SOUTH_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (CatwalkBit.isActive(meta, CatwalkBit.NORTH)) aabbs.add(
-            NORTH_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (CatwalkBit.isActive(meta, CatwalkBit.EAST)) aabbs.add(
-            EAST_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
-        if (CatwalkBit.isActive(meta, CatwalkBit.WEST)) aabbs.add(
-            WEST_BOUNDS.copy()
-                .addCoord(0, railHeightIncrease, 0));
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.BASE)) aabbs.add(base);
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.SOUTH)) aabbs.add(south);
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.NORTH)) aabbs.add(north);
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.EAST)) aabbs.add(east);
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.WEST)) aabbs.add(west);
 
         // Move up all boxes by 14 pixels if catwalk is in the top half state
         if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
@@ -257,49 +278,65 @@ public class BlockCatwalk extends Block {
             double adjustHeight = 0;
             if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) adjustHeight = 0.8750;
 
-            AxisAlignedBB baseBb = BASE_BOUNDS.copy()
+            AxisAlignedBB base = BASE_BOUNDS.copy()
                 .offset(0, adjustHeight, 0);
-            AxisAlignedBB southBb = SOUTH_BOUNDS.copy()
+
+            // Use smaller base selection bounds if it is disabled
+            if (!CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
+                base = BASE_BOUNDS_DISABLED.copy()
+                    .offset(0, adjustHeight, 0);
+            }
+
+            AxisAlignedBB south = SOUTH_BOUNDS.copy()
                 .offset(0, adjustHeight, 0);
-            AxisAlignedBB northBb = NORTH_BOUNDS.copy()
+            AxisAlignedBB north = NORTH_BOUNDS.copy()
                 .offset(0, adjustHeight, 0);
-            AxisAlignedBB eastBb = EAST_BOUNDS.copy()
+            AxisAlignedBB east = EAST_BOUNDS.copy()
                 .offset(0, adjustHeight, 0);
-            AxisAlignedBB westBb = WEST_BOUNDS.copy()
+            AxisAlignedBB west = WEST_BOUNDS.copy()
                 .offset(0, adjustHeight, 0);
+
+            HashMap<CatwalkBit, AxisAlignedBB> map = new HashMap<>();
+            map.put(CatwalkBit.BASE, base);
+            map.put(CatwalkBit.SOUTH, south);
+            map.put(CatwalkBit.NORTH, north);
+            map.put(CatwalkBit.EAST, east);
+            map.put(CatwalkBit.WEST, west);
+
+            // Adjust railing selection boxes depending on if the base and said railing are active or not
+            for (Map.Entry<CatwalkBit, AxisAlignedBB> entry : map.entrySet()) {
+                if (entry.getKey() != CatwalkBit.BASE) {
+                    entry.getValue().minY = base.minY;
+                    if (!CatwalkBit.isActive(meta, entry.getKey())) {
+                        entry.getValue().maxY = base.maxY;
+                    }
+                }
+            }
 
             BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
 
-            if (subX >= southBb.minX && subX <= southBb.maxX
-                && subY >= southBb.minY
-                && subY <= southBb.maxY
-                && subZ >= southBb.minZ
-                && subZ <= southBb.maxZ) {
-                state.setPropertyValue(CatwalkBit.SOUTH.toString(), !CatwalkBit.isActive(meta, CatwalkBit.SOUTH));
-            }
-
-            if (subX >= northBb.minX && subX <= northBb.maxX
-                && subY >= northBb.minY
-                && subY <= northBb.maxY
-                && subZ >= northBb.minZ
-                && subZ <= northBb.maxZ) {
-                state.setPropertyValue(CatwalkBit.NORTH.toString(), !CatwalkBit.isActive(meta, CatwalkBit.NORTH));
-            }
-
-            if (subX >= eastBb.minX && subX <= eastBb.maxX
-                && subY >= eastBb.minY
-                && subY <= eastBb.maxY
-                && subZ >= eastBb.minZ
-                && subZ <= eastBb.maxZ) {
-                state.setPropertyValue(CatwalkBit.EAST.toString(), !CatwalkBit.isActive(meta, CatwalkBit.EAST));
-            }
-
-            if (subX >= westBb.minX && subX <= westBb.maxX
-                && subY >= westBb.minY
-                && subY <= westBb.maxY
-                && subZ >= westBb.minZ
-                && subZ <= westBb.maxZ) {
-                state.setPropertyValue(CatwalkBit.WEST.toString(), !CatwalkBit.isActive(meta, CatwalkBit.WEST));
+            for (Map.Entry<CatwalkBit, AxisAlignedBB> pair : map.entrySet()) {
+                AxisAlignedBB aabb = pair.getValue();
+                if (subX >= aabb.minX && subX <= aabb.maxX
+                    && subY >= aabb.minY
+                    && subY <= aabb.maxY
+                    && subZ >= aabb.minZ
+                    && subZ <= aabb.maxZ) {
+                    if (pair.getKey() == CatwalkBit.BASE) {
+                        if (player.isSneaking()) {
+                            state.setPropertyValue(
+                                pair.getKey()
+                                    .toString(),
+                                !CatwalkBit.isActive(meta, pair.getKey()));
+                            break;
+                        }
+                    } else {
+                        state.setPropertyValue(
+                            pair.getKey()
+                                .toString(),
+                            !CatwalkBit.isActive(meta, pair.getKey()));
+                    }
+                }
             }
 
             state.place(worldIn, x, y, z);
@@ -385,9 +422,10 @@ public class BlockCatwalk extends Block {
 
             if (blockLook instanceof BlockCatwalk) {
 
-                // If looking at a catwalk, copy its half and perpendicular railing properties
+                // If looking at a catwalk, copy its half, base, and perpendicular railing properties
                 int lookMeta = world.getBlockMetadata(x, y, z);
                 isUpper = CatwalkBit.isActive(lookMeta, CatwalkBit.IS_UPPER);
+                base = CatwalkBit.isActive(lookMeta, CatwalkBit.BASE);
 
                 switch (facing) {
                     case SOUTH, NORTH -> {
