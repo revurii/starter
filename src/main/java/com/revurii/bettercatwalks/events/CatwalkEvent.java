@@ -1,6 +1,7 @@
 package com.revurii.bettercatwalks.events;
 
 import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.EntityLivingBase;
@@ -38,8 +39,29 @@ public class CatwalkEvent {
                 .getItem() != ModBlocks.CATWALK.getItem()
             || !(targetBlock instanceof BlockCatwalk)) return;
 
-        Vec3 placeVec = CatwalkUtils
-            .getCatwalkPlacementPosition(player, world, target.blockX, target.blockY, target.blockZ, target.sideHit);
+        float dist = Minecraft.getMinecraft().playerController.getBlockReachDistance();
+
+        Vec3 start = player.getPosition(0);
+        Vec3 look = player.getLookVec();
+        Vec3 end = Vec3.createVectorHelper(
+            start.xCoord + look.xCoord * dist,
+            start.yCoord + look.yCoord * dist,
+            start.zCoord + look.zCoord * dist);
+
+        MovingObjectPosition mop = targetBlock
+            .collisionRayTrace(world, target.blockX, target.blockY, target.blockZ, start, end);
+        if (mop == null) return;
+
+        Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(
+            player,
+            world,
+            target.blockX,
+            target.blockY,
+            target.blockZ,
+            target.sideHit,
+            (float) mop.hitVec.xCoord - target.blockX,
+            (float) mop.hitVec.yCoord - target.blockY,
+            (float) mop.hitVec.zCoord - target.blockZ);
 
         // If there is something in the way of where a catwalk would be placed, do nothing
         int px = MathHelper.floor_double(placeVec.xCoord);

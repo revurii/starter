@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.block.Block;
@@ -83,23 +82,22 @@ public class BlockCatwalk extends Block {
         Collection<AxisAlignedBB> aabbs = getCatwalkBoundsBasedOnState(meta, 0, true).values();
 
         // Get the closest MOP hit
-        MovingObjectPosition mop = null;
+        MovingObjectPosition cmop = null;
 
         for (AxisAlignedBB aabb : aabbs) {
-            MovingObjectPosition hit = aabb.copy()
-                .offset(x, y, z)
+            MovingObjectPosition mop = aabb.offset(x, y, z)
                 .calculateIntercept(startVec, endVec);
-            if (hit == null) continue;
-            if (mop == null || hit.hitVec.distanceTo(startVec) < mop.hitVec.distanceTo(startVec)) mop = hit;
+            if (mop == null) continue;
+            if (cmop == null || mop.hitVec.distanceTo(startVec) < cmop.hitVec.distanceTo(startVec)) cmop = mop;
         }
 
-        if (mop != null) {
-            mop.blockX = x;
-            mop.blockY = y;
-            mop.blockZ = z;
+        if (cmop != null) {
+            cmop.blockX = x;
+            cmop.blockY = y;
+            cmop.blockZ = z;
         }
 
-        return mop;
+        return cmop;
 
     }
 
@@ -109,27 +107,21 @@ public class BlockCatwalk extends Block {
 
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
 
-        // Position of the player's eyes in the world
-        Vec3 start = player.getPosition(0);
-
-        // Point relative to the player's eyes used to determine their line of sight (-1 to 1 on each axis)
-        Vec3 look = player.getLookVec();
-
         float dist = Minecraft.getMinecraft().playerController.getBlockReachDistance();
 
-        // Farthest point that the player can interact with if not obstructed
+        Vec3 start = player.getPosition(0);
+        Vec3 look = player.getLookVec();
         Vec3 end = Vec3.createVectorHelper(
             start.xCoord + look.xCoord * dist,
             start.yCoord + look.yCoord * dist,
             start.zCoord + look.zCoord * dist);
 
         int meta = worldIn.getBlockMetadata(x, y, z);
-        Collection<AxisAlignedBB> aabbs = getCatwalkBoundsBasedOnState(meta, 0, true).values();
 
         AxisAlignedBB closestBb = null;
         MovingObjectPosition closestMop = null;
 
-        for (AxisAlignedBB aabb : aabbs) {
+        for (AxisAlignedBB aabb : getCatwalkBoundsBasedOnState(meta, 0, true).values()) {
 
             aabb.offset(x, y, z);
             MovingObjectPosition hit = aabb.calculateIntercept(start, end);
@@ -200,7 +192,6 @@ public class BlockCatwalk extends Block {
     public HashMap<CatwalkBit, AxisAlignedBB> getCatwalkBoundsBasedOnState(int meta, double railHeightIncrease,
         boolean forSelection) {
 
-        // List<AxisAlignedBB> aabbs = new ArrayList<>();
         HashMap<CatwalkBit, AxisAlignedBB> bounds = new HashMap<>();
 
         // Determine base bounds
@@ -234,7 +225,9 @@ public class BlockCatwalk extends Block {
         }
 
         // Move up all bounds by 14 pixels if catwalk is in the top half state
-        if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) bounds.forEach((bit, aabb) -> aabb.offset(0, 0.8750, 0));
+        if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) {
+            bounds.forEach((bit, aabb) -> aabb.offset(0, 0.8750, 0));
+        }
 
         return bounds;
 
@@ -270,6 +263,8 @@ public class BlockCatwalk extends Block {
 
         // Disable the touching railings of any adjacent catwalks if they have the same half property as the placed
         // catwalk
+
+        // TODO: Handle direction based logic better
 
         boolean isUpper = CatwalkBit.isActive(worldIn.getBlockMetadata(x, y, z), CatwalkBit.IS_UPPER);
 
@@ -314,6 +309,8 @@ public class BlockCatwalk extends Block {
     @Override
     public boolean onBlockActivated(World worldIn, int x, int y, int z, EntityPlayer player, int side, float subX,
         float subY, float subZ) {
+
+        // TODO: Handle direction based logic better
 
         if (player.getHeldItem() != null && player.getHeldItem()
             .getItem() instanceof ItemBlowtorch) {
@@ -378,69 +375,7 @@ public class BlockCatwalk extends Block {
 
                 // Determine which railing to toggle
                 // Nearly the same logic as getSelectedBoundingBoxFromPool() except we already have the hit vector
-
-                HashMap<CatwalkBit, AxisAlignedBB> bounds = getCatwalkBoundsBasedOnState(meta, 0, true);
-
-                CatwalkBit bit = null;
-                AxisAlignedBB closestBb = null;
-
-                for (Map.Entry<CatwalkBit, AxisAlignedBB> box : bounds.entrySet()) {
-
-                    AxisAlignedBB aabb = box.getValue();
-
-                    if (subX >= aabb.minX && subX <= aabb.maxX
-                        && subY >= aabb.minY
-                        && subY <= aabb.maxY
-                        && subZ >= aabb.minZ
-                        && subZ <= aabb.maxZ) {
-
-                        if (closestBb == null) {
-
-                            bit = box.getKey();
-                            closestBb = aabb;
-
-                        } else {
-
-                            Vec3 hitVec = Vec3.createVectorHelper(subX, subY, subZ);
-                            double closestOppositeX = hitVec.xCoord;
-                            double closestOppositeZ = hitVec.zCoord;
-                            double currentOppositeX = hitVec.xCoord;
-                            double currentOppositeZ = hitVec.zCoord;
-
-                            switch (CatwalkUtils.getCardinalDirection(player)) {
-                                case EAST -> {
-                                    closestOppositeX = closestBb.maxX;
-                                    currentOppositeX = aabb.maxX;
-                                }
-                                case WEST -> {
-                                    closestOppositeX = closestBb.minX;
-                                    currentOppositeX = aabb.minX;
-                                }
-                                case SOUTH -> {
-                                    closestOppositeZ = closestBb.maxZ;
-                                    currentOppositeZ = aabb.maxZ;
-                                }
-                                case NORTH -> {
-                                    closestOppositeZ = closestBb.minZ;
-                                    currentOppositeZ = aabb.minZ;
-                                }
-                            }
-
-                            Vec3 closestOpposite = Vec3
-                                .createVectorHelper(closestOppositeX, hitVec.yCoord, closestOppositeZ);
-                            Vec3 currentOpposite = Vec3
-                                .createVectorHelper(currentOppositeX, hitVec.yCoord, currentOppositeZ);
-
-                            if (currentOpposite.distanceTo(hitVec) < closestOpposite.distanceTo(hitVec)) {
-                                bit = box.getKey();
-                                closestBb = aabb;
-                            }
-
-                        }
-
-                    }
-
-                }
+                CatwalkBit bit = CatwalkUtils.getCatwalkPartHit(this, player, meta, subX, subY, subZ);
 
                 if (bit == null) return false;
                 state.setPropertyValue(bit.toString(), !CatwalkBit.isActive(meta, bit));
@@ -505,7 +440,9 @@ public class BlockCatwalk extends Block {
         public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
             float hitX, float hitY, float hitZ) {
 
-            Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side);
+            // TODO: Handle direction based logic better
+
+            Vec3 placeVec = CatwalkUtils.getCatwalkPlacementPosition(player, world, x, y, z, side, hitX, hitY, hitZ);
             int placeX = MathHelper.floor_double(placeVec.xCoord);
             int placeY = MathHelper.floor_double(placeVec.yCoord);
             int placeZ = MathHelper.floor_double(placeVec.zCoord);
