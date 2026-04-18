@@ -1,6 +1,7 @@
 package com.revurii.bettercatwalks.blocks;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,19 +40,6 @@ public class BlockCatwalk extends Block {
     // Each bit in the metadata will represent whether a railing on a specific side is active or not
     // ex. 0b000000 -> IS_UPPER, BASE, SOUTH, NORTH, EAST, WEST
 
-    private static final AxisAlignedBB BASE_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.0000, 0.0000, 1.0000, 0.1250, 1.0000);
-    private static final AxisAlignedBB BASE_BOUNDS_DISABLED = AxisAlignedBB
-        .getBoundingBox(0.3750, 0.0000, 0.3750, 0.6250, 0.1250, 0.6250);
-    private static final AxisAlignedBB SOUTH_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.1250, 0.8750, 1.0000, 1.0000, 1.0000);
-    private static final AxisAlignedBB NORTH_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.1250, 0.0000, 1.0000, 1.0000, 0.1250);
-    private static final AxisAlignedBB EAST_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.8750, 0.1250, 0.0000, 1.0000, 1.0000, 1.0000);
-    private static final AxisAlignedBB WEST_BOUNDS = AxisAlignedBB
-        .getBoundingBox(0.0000, 0.1250, 0.0000, 0.1250, 1.0000, 1.0000);
-
     public BlockCatwalk(String unlocalizedName) {
         super(Material.iron);
         this.setBlockName(unlocalizedName);
@@ -67,7 +55,9 @@ public class BlockCatwalk extends Block {
         // mask = bounding box of the entity colliding with the block (northwest bottom corner to southeast top corner)
         // list = add bounding boxes that will be active here
 
-        for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0.5, false)) {
+        int meta = worldIn.getBlockMetadata(x, y, z);
+
+        for (AxisAlignedBB bb : getCatwalkBoundsBasedOnState(meta, 0.5, false).values()) {
             this.setBlockBounds(
                 (float) bb.minX,
                 (float) bb.minY,
@@ -89,23 +79,27 @@ public class BlockCatwalk extends Block {
         // startVec = point on the bounding box that the player is looking at, based on min x, y, z to max x, y, z
         // endVec = farthest point the player can reach if not obstructed
 
-        // Get the first AABB in the player's line of sight
-        Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils.getFirstInterceptedAABBandMOP(
-            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0, true),
-            x,
-            y,
-            z,
-            startVec,
-            endVec);
-        if (aabbMop != null) {
-            MovingObjectPosition mop = aabbMop.getValue();
+        int meta = worldIn.getBlockMetadata(x, y, z);
+        Collection<AxisAlignedBB> aabbs = getCatwalkBoundsBasedOnState(meta, 0, true).values();
+
+        // Get the closest MOP hit
+        MovingObjectPosition mop = null;
+
+        for (AxisAlignedBB aabb : aabbs) {
+            MovingObjectPosition hit = aabb.copy()
+                .offset(x, y, z)
+                .calculateIntercept(startVec, endVec);
+            if (hit == null) continue;
+            if (mop == null || hit.hitVec.distanceTo(startVec) < mop.hitVec.distanceTo(startVec)) mop = hit;
+        }
+
+        if (mop != null) {
             mop.blockX = x;
             mop.blockY = y;
             mop.blockZ = z;
-            return mop;
         }
 
-        return null;
+        return mop;
 
     }
 
@@ -129,16 +123,70 @@ public class BlockCatwalk extends Block {
             start.yCoord + look.yCoord * dist,
             start.zCoord + look.zCoord * dist);
 
-        Map.Entry<AxisAlignedBB, MovingObjectPosition> aabbMop = CatwalkUtils.getFirstInterceptedAABBandMOP(
-            getCatwalkBoundsBasedOnState(worldIn.getBlockMetadata(x, y, z), 0, true),
-            x,
-            y,
-            z,
-            start,
-            end);
+        int meta = worldIn.getBlockMetadata(x, y, z);
+        Collection<AxisAlignedBB> aabbs = getCatwalkBoundsBasedOnState(meta, 0, true).values();
 
-        if (aabbMop != null) return aabbMop.getKey();
-        return AxisAlignedBB.getBoundingBox(0, 0, 0, 1, 1, 1);
+        AxisAlignedBB closestBb = null;
+        MovingObjectPosition closestMop = null;
+
+        for (AxisAlignedBB aabb : aabbs) {
+
+            aabb.offset(x, y, z);
+            MovingObjectPosition hit = aabb.calculateIntercept(start, end);
+
+            if (hit != null) {
+
+                if (closestBb == null || hit.hitVec.distanceTo(start) < closestMop.hitVec.distanceTo(start)) {
+                    closestBb = aabb;
+                    closestMop = hit;
+                    continue;
+                }
+
+                // If two bounding boxes were hit,
+                // use the box that has the closest face opposite the direction that the player is facing
+
+                if (hit.hitVec.distanceTo(start) == closestMop.hitVec.distanceTo(start)) {
+
+                    Vec3 hitVec = hit.hitVec;
+                    double closestOppositeX = hitVec.xCoord;
+                    double closestOppositeZ = hitVec.zCoord;
+                    double currentOppositeX = hitVec.xCoord;
+                    double currentOppositeZ = hitVec.zCoord;
+
+                    switch (CatwalkUtils.getCardinalDirection(player)) {
+                        case EAST -> {
+                            closestOppositeX = closestBb.maxX;
+                            currentOppositeX = aabb.maxX;
+                        }
+                        case WEST -> {
+                            closestOppositeX = closestBb.minX;
+                            currentOppositeX = aabb.minX;
+                        }
+                        case SOUTH -> {
+                            closestOppositeZ = closestBb.maxZ;
+                            currentOppositeZ = aabb.maxZ;
+                        }
+                        case NORTH -> {
+                            closestOppositeZ = closestBb.minZ;
+                            currentOppositeZ = aabb.minZ;
+                        }
+                    }
+
+                    Vec3 closestOpposite = Vec3.createVectorHelper(closestOppositeX, hitVec.yCoord, closestOppositeZ);
+                    Vec3 currentOpposite = Vec3.createVectorHelper(currentOppositeX, hitVec.yCoord, currentOppositeZ);
+
+                    if (currentOpposite.distanceTo(hitVec) < closestOpposite.distanceTo(hitVec)) {
+                        closestBb = aabb;
+                        closestMop = hit;
+                    }
+
+                }
+
+            }
+        }
+
+        if (closestBb != null) return closestBb;
+        return AxisAlignedBB.getBoundingBox(x, y, z, x, y, z);
 
     }
 
@@ -149,49 +197,46 @@ public class BlockCatwalk extends Block {
      * @param railHeightIncrease will increase the height of the railings by the set amount, for use with collisions
      * @param forSelection       will force the base bounding box to appear, for use with selection
      */
-    public List<AxisAlignedBB> getCatwalkBoundsBasedOnState(int meta, double railHeightIncrease, boolean forSelection) {
+    public HashMap<CatwalkBit, AxisAlignedBB> getCatwalkBoundsBasedOnState(int meta, double railHeightIncrease,
+        boolean forSelection) {
 
-        AxisAlignedBB base = BASE_BOUNDS.copy();
+        // List<AxisAlignedBB> aabbs = new ArrayList<>();
+        HashMap<CatwalkBit, AxisAlignedBB> bounds = new HashMap<>();
 
-        // If forSelection and base is disabled, use the smaller base selection box
-        if (forSelection && !CatwalkBit.isActive(meta, CatwalkBit.BASE)) base = BASE_BOUNDS_DISABLED.copy();
+        // Determine base bounds
+        AxisAlignedBB base = CatwalkBit.BASE.getBounds(true);
+        if (forSelection && !CatwalkBit.isActive(meta, CatwalkBit.BASE)) base = CatwalkBit.BASE.getBounds(false);
+        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.BASE)) bounds.put(CatwalkBit.BASE, base);
 
-        AxisAlignedBB south = SOUTH_BOUNDS.copy()
-            .addCoord(0, railHeightIncrease, 0);
-        AxisAlignedBB north = NORTH_BOUNDS.copy()
-            .addCoord(0, railHeightIncrease, 0);
-        AxisAlignedBB east = EAST_BOUNDS.copy()
-            .addCoord(0, railHeightIncrease, 0);
-        AxisAlignedBB west = WEST_BOUNDS.copy()
-            .addCoord(0, railHeightIncrease, 0);
+        // Determine railing bounds
+        for (CatwalkBit bit : CatwalkBit.getAllBounds(true)) {
 
-        // Extend railing bounds downwards if base is disabled
-        if (!CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
-            south.minY = base.minY;
-            north.minY = base.minY;
-            east.minY = base.minY;
-            west.minY = base.minY;
+            AxisAlignedBB aabb = bit.getBounds(true)
+                .addCoord(0, railHeightIncrease, 0);
+
+            // If not forSelection or base is active, add the railing bounds if it is active
+            if (!forSelection || CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
+                if (CatwalkBit.isActive(meta, bit)) bounds.put(bit, aabb);
+                continue;
+            }
+
+            // Otherwise (meaning forSelection and base is inactive)...
+            if (CatwalkBit.isActive(meta, bit)) {
+                // Extend railing downwards if enabled
+                aabb.minY = base.minY;
+            } else {
+                // Use disabled bounds if disabled
+                aabb = bit.getBounds(false);
+            }
+
+            bounds.put(bit, aabb);
+
         }
 
-        // Lower railing bounds height if it is disabled
-        if (forSelection) {
-            if (!CatwalkBit.isActive(meta, CatwalkBit.SOUTH)) south.maxY = base.maxY;
-            if (!CatwalkBit.isActive(meta, CatwalkBit.NORTH)) north.maxY = base.maxY;
-            if (!CatwalkBit.isActive(meta, CatwalkBit.EAST)) east.maxY = base.maxY;
-            if (!CatwalkBit.isActive(meta, CatwalkBit.WEST)) west.maxY = base.maxY;
-        }
+        // Move up all bounds by 14 pixels if catwalk is in the top half state
+        if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) bounds.forEach((bit, aabb) -> aabb.offset(0, 0.8750, 0));
 
-        List<AxisAlignedBB> aabbs = new ArrayList<>();
-        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.BASE)) aabbs.add(base);
-        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.SOUTH)) aabbs.add(south);
-        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.NORTH)) aabbs.add(north);
-        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.EAST)) aabbs.add(east);
-        if (forSelection || CatwalkBit.isActive(meta, CatwalkBit.WEST)) aabbs.add(west);
-
-        // Move up all boxes by 14 pixels if catwalk is in the top half state
-        if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
-
-        return aabbs;
+        return bounds;
 
     }
 
@@ -200,18 +245,18 @@ public class BlockCatwalk extends Block {
 
         List<AxisAlignedBB> aabbs = new ArrayList<>();
         if (south) aabbs.add(
-            SOUTH_BOUNDS.copy()
+            CatwalkBit.SOUTH.getBounds(true)
                 .addCoord(0, railHeightIncrease, 0));
         if (north) aabbs.add(
-            NORTH_BOUNDS.copy()
+            CatwalkBit.NORTH.getBounds(true)
                 .addCoord(0, railHeightIncrease, 0));
         if (east) aabbs.add(
-            EAST_BOUNDS.copy()
+            CatwalkBit.EAST.getBounds(true)
                 .addCoord(0, railHeightIncrease, 0));
         if (west) aabbs.add(
-            WEST_BOUNDS.copy()
+            CatwalkBit.WEST.getBounds(true)
                 .addCoord(0, railHeightIncrease, 0));
-        if (base) aabbs.add(BASE_BOUNDS.copy());
+        if (base) aabbs.add(CatwalkBit.BASE.getBounds(true));
 
         // Move up all boxes by 14 pixels if catwalk is in the top half state
         if (isUpper) aabbs.forEach(aabb -> aabb.offset(0, 0.8750, 0));
@@ -274,69 +319,132 @@ public class BlockCatwalk extends Block {
             .getItem() instanceof ItemBlowtorch) {
 
             int meta = worldIn.getBlockMetadata(x, y, z);
-
-            double adjustHeight = 0;
-            if (CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER)) adjustHeight = 0.8750;
-
-            AxisAlignedBB base = BASE_BOUNDS.copy()
-                .offset(0, adjustHeight, 0);
-
-            // Use smaller base selection bounds if it is disabled
-            if (!CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
-                base = BASE_BOUNDS_DISABLED.copy()
-                    .offset(0, adjustHeight, 0);
-            }
-
-            AxisAlignedBB south = SOUTH_BOUNDS.copy()
-                .offset(0, adjustHeight, 0);
-            AxisAlignedBB north = NORTH_BOUNDS.copy()
-                .offset(0, adjustHeight, 0);
-            AxisAlignedBB east = EAST_BOUNDS.copy()
-                .offset(0, adjustHeight, 0);
-            AxisAlignedBB west = WEST_BOUNDS.copy()
-                .offset(0, adjustHeight, 0);
-
-            HashMap<CatwalkBit, AxisAlignedBB> map = new HashMap<>();
-            map.put(CatwalkBit.BASE, base);
-            map.put(CatwalkBit.SOUTH, south);
-            map.put(CatwalkBit.NORTH, north);
-            map.put(CatwalkBit.EAST, east);
-            map.put(CatwalkBit.WEST, west);
-
-            // Adjust railing selection boxes depending on if the base and said railing are active or not
-            for (Map.Entry<CatwalkBit, AxisAlignedBB> entry : map.entrySet()) {
-                if (entry.getKey() != CatwalkBit.BASE) {
-                    entry.getValue().minY = base.minY;
-                    if (!CatwalkBit.isActive(meta, entry.getKey())) {
-                        entry.getValue().maxY = base.maxY;
-                    }
-                }
-            }
-
             BlockState state = BlockPropertyRegistry.getBlockState(worldIn, x, y, z);
 
-            for (Map.Entry<CatwalkBit, AxisAlignedBB> pair : map.entrySet()) {
-                AxisAlignedBB aabb = pair.getValue();
-                if (subX >= aabb.minX && subX <= aabb.maxX
-                    && subY >= aabb.minY
-                    && subY <= aabb.maxY
-                    && subZ >= aabb.minZ
-                    && subZ <= aabb.maxZ) {
-                    if (pair.getKey() == CatwalkBit.BASE) {
-                        if (player.isSneaking()) {
+            double heightAdjustment = CatwalkBit.isActive(meta, CatwalkBit.IS_UPPER) ? 0.8750 : 0;
+
+            // Determine base bounds
+            AxisAlignedBB base = CatwalkBit.BASE.getBounds(true)
+                .offset(0, heightAdjustment, 0);
+            if (!CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
+                base = CatwalkBit.BASE.getBounds(false)
+                    .offset(0, heightAdjustment, 0);
+            }
+
+            // If the base was right-clicked, toggle parts based on the position of the hit
+            if (subX >= base.minX && subX <= base.maxX
+                && subY >= base.minY
+                && subY <= base.maxY
+                && subZ >= base.minZ
+                && subZ <= base.maxZ) {
+
+                if (player.isSneaking()) {
+
+                    // Only toggle the base if the player is sneaking
+                    state.setPropertyValue(CatwalkBit.BASE.toString(), !CatwalkBit.isActive(meta, CatwalkBit.BASE));
+
+                } else if (CatwalkBit.isActive(meta, CatwalkBit.BASE)) {
+
+                    // Determine which railing to toggle based on the position of the hit relative to the center
+
+                    float xRelativeToCenter = subX - 0.5f;
+                    float zRelativeToCenter = subZ - 0.5f;
+
+                    if (MathHelper.abs(xRelativeToCenter) > MathHelper.abs((zRelativeToCenter))) {
+                        if (xRelativeToCenter < 0) {
                             state.setPropertyValue(
-                                pair.getKey()
-                                    .toString(),
-                                !CatwalkBit.isActive(meta, pair.getKey()));
-                            break;
+                                CatwalkBit.WEST.toString(),
+                                !CatwalkBit.isActive(meta, CatwalkBit.WEST));
+                        } else {
+                            state.setPropertyValue(
+                                CatwalkBit.EAST.toString(),
+                                !CatwalkBit.isActive(meta, CatwalkBit.EAST));
                         }
                     } else {
-                        state.setPropertyValue(
-                            pair.getKey()
-                                .toString(),
-                            !CatwalkBit.isActive(meta, pair.getKey()));
+                        if (zRelativeToCenter < 0) {
+                            state.setPropertyValue(
+                                CatwalkBit.NORTH.toString(),
+                                !CatwalkBit.isActive(meta, CatwalkBit.NORTH));
+                        } else {
+                            state.setPropertyValue(
+                                CatwalkBit.SOUTH.toString(),
+                                !CatwalkBit.isActive(meta, CatwalkBit.SOUTH));
+                        }
                     }
+
                 }
+
+            } else {
+
+                // Determine which railing to toggle
+                // Nearly the same logic as getSelectedBoundingBoxFromPool() except we already have the hit vector
+
+                HashMap<CatwalkBit, AxisAlignedBB> bounds = getCatwalkBoundsBasedOnState(meta, 0, true);
+
+                CatwalkBit bit = null;
+                AxisAlignedBB closestBb = null;
+
+                for (Map.Entry<CatwalkBit, AxisAlignedBB> box : bounds.entrySet()) {
+
+                    AxisAlignedBB aabb = box.getValue();
+
+                    if (subX >= aabb.minX && subX <= aabb.maxX
+                        && subY >= aabb.minY
+                        && subY <= aabb.maxY
+                        && subZ >= aabb.minZ
+                        && subZ <= aabb.maxZ) {
+
+                        if (closestBb == null) {
+
+                            bit = box.getKey();
+                            closestBb = aabb;
+
+                        } else {
+
+                            Vec3 hitVec = Vec3.createVectorHelper(subX, subY, subZ);
+                            double closestOppositeX = hitVec.xCoord;
+                            double closestOppositeZ = hitVec.zCoord;
+                            double currentOppositeX = hitVec.xCoord;
+                            double currentOppositeZ = hitVec.zCoord;
+
+                            switch (CatwalkUtils.getCardinalDirection(player)) {
+                                case EAST -> {
+                                    closestOppositeX = closestBb.maxX;
+                                    currentOppositeX = aabb.maxX;
+                                }
+                                case WEST -> {
+                                    closestOppositeX = closestBb.minX;
+                                    currentOppositeX = aabb.minX;
+                                }
+                                case SOUTH -> {
+                                    closestOppositeZ = closestBb.maxZ;
+                                    currentOppositeZ = aabb.maxZ;
+                                }
+                                case NORTH -> {
+                                    closestOppositeZ = closestBb.minZ;
+                                    currentOppositeZ = aabb.minZ;
+                                }
+                            }
+
+                            Vec3 closestOpposite = Vec3
+                                .createVectorHelper(closestOppositeX, hitVec.yCoord, closestOppositeZ);
+                            Vec3 currentOpposite = Vec3
+                                .createVectorHelper(currentOppositeX, hitVec.yCoord, currentOppositeZ);
+
+                            if (currentOpposite.distanceTo(hitVec) < closestOpposite.distanceTo(hitVec)) {
+                                bit = box.getKey();
+                                closestBb = aabb;
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                if (bit == null) return false;
+                state.setPropertyValue(bit.toString(), !CatwalkBit.isActive(meta, bit));
+
             }
 
             state.place(worldIn, x, y, z);
